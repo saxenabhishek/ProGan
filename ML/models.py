@@ -1,53 +1,105 @@
 import torch
 from torch import nn
 
-class Generator(torch.nn.Module):
-	'''
-	Input: takes in one positional argument 'noiseSize' which is size of random noise vector
-	Returns: output of generator
-	'''
+class Generator(nn.Module):
 	def __init__(self, **kwargs):
 		super(Generator, self).__init__()
-		self.n_features = 512 * 7 * 7 * kwargs['noiseSize'] # CNN O/P * Noise Vec.
-		self.n_out = 176 * 3 * 3
-		self.noiseSize = kwargs['noise_size']
-		self.kSize = kwargs['kernel_size']
+		'''
+		init 
+		make generator block
+		base for generator arch
 
-		self.linear = nn.Linear(n_features, 1024 * 4 * 4) # not sure about this, cos original DCGAN arch. mein original random noise vector is (100, 1)
+		'''
+		## dont change the order in which the functions are called plx :)
+		self.device = kwargs['device']
+		self.feat = kwargs["feat"] ## device cuda
+		self.noisedim = kwargs["noisedim"]
 
-		# according to me, before we concatenate w/ the noise and feed to this class, we should pass the image encoding through a Dense layer into a (250, 1) ka output shape. Phir usko we can concatenate with a random noise vector of (250, 1) to get n_features above
+		
+		self.im_channels = kwargs["im_channels"]
 
-		self.conv1 = nn.Sequential(
-			nn.ConvTranspose2d(in_channels = 1024, out_channels = 512, stride = 2, kernel_size = kSize, padding = 1, bias = False),
-			nn.BatchNorm2d(512),
-			nn.ReLU(inplace=True)
+		batch_size = kwargs['batch_size'] ## should be same for resnet
+		self.inputnoise = self.make_noise(batch_size)
+		
+		self.encodedvec = self.concat()   
+
+		self.genin = self.geninput()  ## final generator input
+		
+
+		## final generator
+
+		self.gen = nn.Sequential(
+				   self.genblock(input_channels=self.genin.shape[1], hidden_size=512, kernel_size=4, stride=1, padding=1),
+				   self.genblock(input_channels=512, hidden_size=350, kernel_size=4, stride=2, padding=1),
+				   self.genblock(input_channels=350, hidden_size=250, kernel_size=4, stride=2, padding=1),
+				   self.genblock(input_channels=250, hidden_size=150, kernel_size=4, stride=2, padding=1),
+
+
+				   ## adding blocks till it trains
+				   ## skips should be added after 4 layers ideally 
+
+				   self.genblock(input_channels=150, hidden_size=self.im_channels, kernel_size=4, stride=2, padding=1, last_layer=True) ## final layer returning tanh
+
+
 		)
 
-		self.conv2 = nn.Sequential(
-			nn.ConvTranspose2d(in_channels = 512, out_channels = 256, stride = 2, kernel_size = kSize, padding = 1, bias = False),
-			nn.BatchNorm2d(256),
-			nn.ReLU(inplace=True)
-		)
 
-		self.conv3 = nn.Sequential(
-			nn.ConvTranspose2d(in_channels = 256, out_channels = 128, stride = 2, kernel_size = kSize, padding = 1, bias = False),
-			nn.BatchNorm2d(128),
-			nn.ReLU(inplace=True)
-		)
+	def genblock(self, input_channels, hidden_size, kernel_size, stride, padding, last_layer=False):
+		'''
+		returns the generator block
+		needed if skips are added 
+		down the line
+		
+		'''
+		if not last_layer:
+			genblock = nn.Sequential(
+					  nn.ConvTranspose2d(input_channels, hidden_size, kernel_size=kernel_size, stride=stride, padding=padding, bias=False),
+					  nn.BatchNorm2d(hidden_size),
+					  nn.ReLU(True),
+					)
 
-		self.conv4 = nn.Sequential(
-			nn.ConvTranspose2d(in_channels = 128, out_channels = 3, stride = 2, kernel_size = kSize, padding = 1, bias = False),
-			nn.Tanh()
-		)
+		else:
+			genblock = nn.Sequential(
+						nn.ConvTranspose2d(input_channels, hidden_size, kernel_size=kernel_size, stride=stride, padding=padding, bias=False),
+						nn.Tanh(),
+
+			)
+		
+		return genblock
+
+
+	def geninput(self):
+		'''
+		returns final input 
+		to the generator
+
+		'''
+		return self.encodedvec.view(len(self.encodedvec), self.encodedvec.shape[1], 1, 1)
+
+
+	def concat(self):
+		'''
+		feature map from resnet concat with
+		noise input alone the first dim
+
+		'''
+		encoded = torch.cat([self.feat, self.inputnoise], dim=1)
+		return encoded
+
+
+	def make_noise(self, num_samples):
+		'''
+		returns random noise of 
+		of given dimentions
+
+		'''
+		return torch.randn(num_samples, self.noisedim, device=self.device)
+
+
 	
-	def forward(self, inp):
-		x = self.linear(inp)
-		x = self.conv1(x)
-		x = self.conv2(x)
-		x = self.conv3(x)
-		output = self.conv4(x)
-
-		return output
+	def forward(self):
+		# print('Going in ', self.genin.shape) uncomment to see dims going in
+		return self.gen(self.genin)
 
 
 class Discriminator(torch.nn.Module):
@@ -96,3 +148,10 @@ class Discriminator(torch.nn.Module):
 		output = self.outLayer(x)
 
 		return output
+
+
+if __name__ == "__main__":
+	feat = torch.randn(1, 25000, device="cpu") ## coming out from resnet
+	gen = Generator(device="cpu", feat=feat, noisedim=250, im_channels=3, batch_size=1)
+	
+	print(gen.forward().shape)		
