@@ -2,8 +2,8 @@
 <a href="https://dscommunity.in">
 	<img src="https://github.com/Data-Science-Community-SRM/template/blob/master/Header.png?raw=true" width=80%/>
 </a>
-	<h2 align="center"> < Insert Project Title Here > </h2>
-	<h4 align="center"> < Insert Project Description Here > <h4>
+	<h2 align="center">Fashion GAN</h2>
+	<h4 align="center">Genarate images with different clothes<h4>
 </p>
 
 ---
@@ -98,6 +98,6 @@ John Doe
 [![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](http://badges.mit-license.org)
 
 <p align="center">
-	Made with :heart: by <a href="https://dscommunity.in">DS Community SRM</a>
+	Made with ❤️ by <a href="https://dscommunity.in">DS Community SRM</a>
 </p>
 
