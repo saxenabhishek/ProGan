@@ -6,8 +6,8 @@ Training
 
 import torch
 import torch.optim as optim
-from dataset import Data
-from models import Generator, Discriminator, ResNetEncoder
+from .dataset import Data
+from .models import Generator, Discriminator, ResNetEncoder
 
 
 def train_step(dataloader, netD, netG, netENC, device):
