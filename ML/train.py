@@ -2,22 +2,23 @@
 
 Training
 
-
 '''
 
+import torch
+import torch.optim as optim
 from dataset import Data
+from models import Generator, Discriminator, ResNetEncoder
 
-def train(dataloader, netD, netG, netENC, num_epochs, device):
+
+def train_step(dataloader, netD, netG, netENC, device):
 
     print("Starting Training Loop...")
-    for epoch in range(num_epochs):
-        for data, _ in dataloader:
-
-            img_Device = data.to(device)
+    for data, _ in dataloader:
+        img_Device = data.to(device)
             
-            netD.zero_grad()
+        netD.zero_grad()
             
-            output = netD(img_Device)
+        output = netD(img_Device)
             
         # label = torch.full((b_size,), real_label, dtype=torch.float, device=device)
         
@@ -60,7 +61,35 @@ def train(dataloader, netD, netG, netENC, num_epochs, device):
 
         # iters += 1
 
-if __name__ == "__main__" : 
+def train_automate(epoch):
+    vec_shape = 1000
+    batch_size = 128
+
     d = Data("Data")
     d_loaded = d.getdata()
-    #train(dataloader, netD, netG, netENC, num_epochs, device):
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = "cpu"
+
+    netG = Generator(device=device, noisedim=500, batch_size=batch_size, vec_shape=vec_shape)
+    netD = Discriminator()
+    netRes = ResNetEncoder(vec_shape)
+
+    netG = netG.to(device)
+    netD = netD.to(device)
+    netRes = netRes.to(device)
+
+    lr = 0.002
+    beta1 = 0.5
+    optD = optim.Adam(netD.parameters(), lr=lr, betas=(beta1, 0.999))
+    optG = optim.Adam(list(netRes.parameters()) + list(netG.parameters()), lr=lr, betas=(beta1, 0.999))
+
+    # for i in epoch:
+    #     train_step(d_loaded, netG, netD, netRes, device, optD, optG)
+
+    
+
+if __name__ == "__main__" : 
+    train_automate(1)
+    
+    # train(d_loaded, netD, netG, netENC, num_epochs, device):
