@@ -7,6 +7,7 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 from PIL import Image
 
+
 class Data():
 
     def __init__(self, path,  mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5), size=(176,176), 
@@ -44,4 +45,3 @@ if __name__ == "__main__":
 
     data = Data(path="../../fashiondata/img")
     alldata = data.getdata()
-    
