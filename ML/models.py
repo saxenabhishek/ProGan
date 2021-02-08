@@ -1,89 +1,100 @@
 import torch
 from torch import nn
+from torchvision import models
+
+
+class ResNetEncoder(nn.Module):
+
+    def __init__(self, vec_shape):
+        
+        super(ResNetEncoder, self).__init__()
+
+
+        self.model =  models.resnet18(pretrained=True)
+        self.model.fc = nn.Linear(self.model.fc.in_features, vec_shape)
+    
+    def forward(self, image):
+        
+        return self.model(image)
+        
+        
 
 class Generator(nn.Module):
-  def __init__(self, **kwargs):
+    def __init__(self, **kwargs):
     
-    super(Generator, self).__init__()
+        super(Generator, self).__init__()
 	
-		## dont change the order in which the functions are called plx :)
-    self.device = kwargs['device']
-		 ## device cuda
-    self.noisedim = kwargs["noisedim"]
-    self.vector_shape = kwargs['vec_shape']
+		
+        self.device = kwargs['device']
+		
+        self.noisedim = kwargs["noisedim"]
+        self.vector_shape = kwargs['vec_shape']
 
-    self.input_shape = self.vector_shape + self.noisedim
-    self.im_channels = kwargs["im_channels"]
+        self.input_shape = self.vector_shape + self.noisedim
+        self.im_channels = kwargs["im_channels"]
 
 
-    self.batch_size = kwargs['batch_size'] ## should be same for resnet
+        self.batch_size = kwargs['batch_size'] 
     
 		
-    
 
-		## final generator
+        self.gen = nn.Sequential(
+				self.genblock(input_channels=self.input_shape, hidden_size=512, kernel_size=4, stride=1, padding=1),
+                self.genblock(input_channels=512, hidden_size=350, kernel_size=4, stride=2, padding=1),
+                self.genblock(input_channels=350, hidden_size=250, kernel_size=4, stride=2, padding=1),
+                self.genblock(input_channels=250, hidden_size=150, kernel_size=4, stride=2, padding=1),
 
-    self.gen = nn.Sequential(
-				   self.genblock(input_channels=self.input_shape, hidden_size=512, kernel_size=4, stride=1, padding=1),
-				   self.genblock(input_channels=512, hidden_size=350, kernel_size=4, stride=2, padding=1),
-				   self.genblock(input_channels=350, hidden_size=250, kernel_size=4, stride=2, padding=1),
-           self.genblock(input_channels=250, hidden_size=150, kernel_size=4, stride=2, padding=1),
-
-
-				   ## adding blocks till it trains
-				   ## skips should be added after 4 layers ideally 
-
-           self.genblock(input_channels=150, hidden_size=self.im_channels, kernel_size=4, stride=2, padding=1, last_layer=True) ## final layer returning tanh
+                self.genblock(input_channels=150, hidden_size=self.im_channels, kernel_size=4, stride=2, padding=1, last_layer=True) ## final layer returning tanh
 
 
   )
 
 
-  def genblock(self, input_channels, hidden_size, kernel_size, stride, padding, last_layer=False):
+    def genblock(self, input_channels, hidden_size, kernel_size, stride, padding, last_layer=False):
 
-    if not last_layer:
-      genblock = nn.Sequential(
+        if not last_layer:
+            genblock = nn.Sequential(
 					  nn.ConvTranspose2d(input_channels, hidden_size, kernel_size=kernel_size, stride=stride, padding=padding, bias=False),
 					  nn.BatchNorm2d(hidden_size),
 					  nn.ReLU(True),
 					)
 
-    else:
-      genblock = nn.Sequential(
+        else:
+            genblock = nn.Sequential(
 						nn.ConvTranspose2d(input_channels, hidden_size, kernel_size=kernel_size, stride=stride, padding=padding, bias=False),
 						nn.Tanh(),
 
 			)
 		
-    return genblock
+        return genblock
 
 
-  def geninput(self):
+    def geninput(self):
 
-    return self.encodedvec.view(len(self.encodedvec), self.encodedvec.shape[1], 1, 1)
-
-
-  def concat(self):
-
-    self.inputnoise = self.make_noise(self.batch_size)
-    encoded = torch.cat([self.feat, self.inputnoise], dim=1)
-    return encoded
+        return self.encodedvec.view(len(self.encodedvec), self.encodedvec.shape[1], 1, 1)
 
 
-  def make_noise(self, num_samples):
+    def concat(self):
+
+        self.inputnoise = self.make_noise()
+        encoded = torch.cat([self.feat, self.inputnoise], dim=1)
+        return encoded
+
+
+    def make_noise(self):
 
 		
-    return torch.randn(num_samples, self.noisedim, device=self.device)
+        return torch.randn(self.batch_size, self.noisedim, device=self.device)
 
 
 	
-  def forward(self, feat):
-    self.feat = feat
-    self.encodedvec = self.concat()    
+    def forward(self, feat):
+        self.feat = feat
+        self.encodedvec = self.concat()    
 
-    self.genin = self.geninput()    
-    print('Going in ', self.genin.shape) 
-    return self.gen(self.genin)
+        self.genin = self.geninput()    
+        # print('Going in ', self.genin.shape) 
+        return self.gen(self.genin)
 
 
 
@@ -134,9 +145,14 @@ class Discriminator(torch.nn.Module):
 
 		return output
 
-
 if __name__ == "__main__":
-	feat = torch.randn(1, 25000, device="cpu") ## coming out from resnet
-	gen = Generator(device="cpu", noisedim=250, im_channels=3, batch_size=1, vec_shape=25000)
-  
-  
+    vec_shape = 500
+    batch_size = 1
+    device = "cuda"
+    resnet = ResNetEncoder(vec_shape)
+    resnet = resnet.to(device)
+    gen = Generator(device=device, noisedim=250, im_channels=3, batch_size=batch_size, vec_shape=vec_shape)
+    gen = gen.to(device)
+    for i in range(2):
+        print(gen(resnet(torch.randn(batch_size, 3, 224, 224, device=device))).shape)
+        
