@@ -16,8 +16,8 @@ class Generator(nn.Module):
     self.im_channels = kwargs["im_channels"]
 
 
-    batch_size = kwargs['batch_size'] ## should be same for resnet
-    self.inputnoise = self.make_noise(batch_size)
+    self.batch_size = kwargs['batch_size'] ## should be same for resnet
+    
 		
     
 
@@ -65,7 +65,7 @@ class Generator(nn.Module):
 
   def concat(self):
 
-
+    self.inputnoise = self.make_noise(self.batch_size)
     encoded = torch.cat([self.feat, self.inputnoise], dim=1)
     return encoded
 
@@ -138,4 +138,5 @@ class Discriminator(torch.nn.Module):
 if __name__ == "__main__":
 	feat = torch.randn(1, 25000, device="cpu") ## coming out from resnet
 	gen = Generator(device="cpu", noisedim=250, im_channels=3, batch_size=1, vec_shape=25000)
-    
+  
+  
