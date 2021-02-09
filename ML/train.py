@@ -9,7 +9,7 @@ import torch.nn as nn
 import torch.optim as optim
 from .dataset import Data
 from .models import Generator, Discriminator, ResNetEncoder
-from torchvision.data.utils import make_grid
+from torchvision.utils import make_grid
 
 # import matplotlib.pyplot as plt
 from time import time
