@@ -9,7 +9,8 @@ import torch.nn as nn
 import torch.optim as optim
 from .dataset import Data
 from .models import Generator, Discriminator, ResNetEncoder
-import matplotlib.pyplot as plt
+
+# import matplotlib.pyplot as plt
 from time import time
 
 
@@ -50,43 +51,62 @@ def pass_element(img, netD, netG, netENC, optD, optG, criterion):
 
     optG.step()
 
-    return D1.mean().item(), D2.mean().item()
+    return (
+        D1.mean().item(),
+        D3.mean().item(),
+        err_totalD.item(),
+        err_GenReal.item(),
+    )
 
 
 def train_step(
-    dataloader, device, netD, netG, netENC, optD, optG, criterion, disF, disR,
+    dataloader,
+    device,
+    netD,
+    netG,
+    netENC,
+    optD,
+    optG,
+    criterion,
+    disF,
+    disR,
+    lossG,
+    lossD,
 ):
 
-    print("Starting Training Loop...")
     for i, data in enumerate(dataloader):
-        st = time()
+        # st = time()
         data_image = data[0]
 
         # Binary class Male or female
         _ = data[1]
 
         img_Device = data_image.to(device)
+
         loss = pass_element(
             img_Device, netD, netG, netENC, optD, optG, criterion
         )
 
-        disF.append(loss[1])
         disR.append(loss[0])
+        disF.append(loss[1])
+        lossD.append(loss[2])
+        lossG.append(loss[3])
 
-        if i % 5 == 0:
+        if i % 50 == 0:
             print(
-                f"|{i}| ------  RealD{loss[0]}\tFakeD{loss[1]}  {time() - st}"
+                f"|{i}| RealD {round(loss[0],4)}, FakeD {round(loss[1],4)}",
+                end=",",
             )
-            st = 0
+            print(f"lossD {round(loss[2],4)}, lossG {round(loss[3],4)}")
+            # st = 0
 
-    return disF, disR
 
-
-def train_automate(epoch):
+def train_automate(epoch, path):
     vec_shape = 1000
     batch_size = 8
-    split = [2, 1, 0]
-    d = Data("../fashiondata/img", batch_size=batch_size, size=(64, 64))
+    split = [1, 2, 0]
+
+    d = Data(path, batch_size=batch_size, size=(64, 64))
     d_loaded, _, _ = d.getdata(split)
 
     print(len(d_loaded))
@@ -127,7 +147,11 @@ def train_automate(epoch):
     criterion = nn.BCEWithLogitsLoss()
     disF = []
     disR = []
+    lossG = []
+    lossD = []
 
+    print("Starting Training Loop...")
+    starting_time = time()
     for i in range(epoch):
         print(f"[Epoch {i + 1}]")
 
@@ -142,25 +166,26 @@ def train_automate(epoch):
             criterion,
             disF,
             disR,
+            lossG,
+            lossD,
         )
-
-    img = d.folderdata[20][0].unsqueeze(0)
-
-    netG = netG.to("cpu")
-    netD = netD.to("cpu")
-    netENC = netENC.to("cpu")
-    netG.device = "cpu"
-
+    print(f"total Time : {time() - starting_time}")
     root = "./ModelWeights/"
     torch.save(netENC.state_dict(), root + "RES.pt")
     torch.save(netG.state_dict(), root + "Gen.pt")
     torch.save(netD.state_dict(), root + "Dis.pt")
 
-    with torch.no_grad():
-        vector = netENC(img)
-        fakeImage = netG(vector)
+    # netG = netG.to("cpu")
+    # netD = netD.to("cpu")
+    # netENC = netENC.to("cpu")
+    # netG.device = "cpu"
 
-    plt.imshow(fakeImage.permute(0, 2, 3, 1)[0])
-    plt.show()
-    return disF, disR
+    # img = d.folderdata[20][0].unsqueeze(0)
 
+    # with torch.no_grad():
+    #     vector = netENC(img)
+    #     fakeImage = netG(vector)
+
+    # plt.imshow(fakeImage.permute(0, 2, 3, 1)[0])
+    # plt.show()
+    return disF, disR, lossG, lossD
