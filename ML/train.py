@@ -9,9 +9,19 @@ import torch.nn as nn
 import torch.optim as optim
 from .dataset import Data
 from .models import Generator, Discriminator, ResNetEncoder
+from torchvision.utils import make_grid
 
 # import matplotlib.pyplot as plt
 from time import time
+
+def show_tensor_images(image_tensor, num_images=64, size=(3, 64, 64)):
+
+    image_tensor = (image_tensor + 1) / 2
+    image_unflat = image_tensor.detach().cpu()
+    image_grid = make_grid(image_unflat[:num_images], nrow=5)
+    plt.imshow(image_grid.permute(1, 2, 0).squeeze())
+    plt.show()
+
 
 
 def pass_element(img, netD, netG, netENC, optD, optG, criterion):
@@ -101,7 +111,7 @@ def train_step(
             # st = 0
 
 
-def train_automate(epoch, path, split, vec_shape=1000, batch_size=8):
+def train_automate(epoch, path, split, vec_shape=1000, batch_size=64):
     d = Data(path, batch_size=batch_size, size=(64, 64))
     d_loaded, _, _ = d.getdata(split)
 
@@ -165,23 +175,22 @@ def train_automate(epoch, path, split, vec_shape=1000, batch_size=8):
             lossG,
             lossD,
         )
-    print(f"total Time : {time() - starting_time}")
-    root = "./ModelWeights/"
-    torch.save(netENC.state_dict(), root + "RES.pt")
-    torch.save(netG.state_dict(), root + "Gen.pt")
-    torch.save(netD.state_dict(), root + "Dis.pt")
+        print(f"total Time : {time() - starting_time}")
+        root = "./ModelWeights/"
+        torch.save(netENC.state_dict(), root + "RES.pt")
+        torch.save(netG.state_dict(), root + "Gen.pt")
+        torch.save(netD.state_dict(), root + "Dis.pt")
 
-    # netG = netG.to("cpu")
-    # netD = netD.to("cpu")
-    # netENC = netENC.to("cpu")
-    # netG.device = "cpu"
+       
 
-    # img = d.folderdata[20][0].unsqueeze(0)
+        imagebatch, _  = next(iter(d_loaded))   
 
-    # with torch.no_grad():
-    #     vector = netENC(img)
-    #     fakeImage = netG(vector)
+        with torch.no_grad():
+            vector = netENC(imagebatch)
+            fakeImage = netG(vector)
 
-    # plt.imshow(fakeImage.permute(0, 2, 3, 1)[0])
-    # plt.show()
+             
+        show_tensor_images(fakeImage)
+        show_tensor_images(imagebatch)
+    
     return disF, disR, lossG, lossD
