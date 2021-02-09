@@ -104,10 +104,8 @@ def train_step(
 
         if i % 50 == 0:
             print(
-                f"|{i}| RealD {round(loss[0],4)}, FakeD {round(loss[1],4)}",
-                end=",",
+                f"|{i}|\t lossD {round(loss[2],4)},\t lossG {round(loss[3],4)}"
             )
-            print(f"lossD {round(loss[2],4)}, lossG {round(loss[3],4)}")
             # st = 0
 
 
@@ -157,9 +155,10 @@ def train_automate(epoch, path, split, vec_shape=1000, batch_size=64):
     lossD = []
 
     print("Starting Training Loop...")
-    starting_time = time()
+    start_of_time = time()
     for i in range(epoch):
         print(f"[Epoch {i + 1}]")
+        starting_time = time()
 
         train_step(
             d_loaded,
@@ -175,7 +174,7 @@ def train_automate(epoch, path, split, vec_shape=1000, batch_size=64):
             lossG,
             lossD,
         )
-        print(f"total Time : {time() - starting_time}")
+        print(f"Epoch Time : {time() - starting_time} secs")
 
         root = "./ModelWeights/"
         torch.save(netENC.state_dict(), root + "RES.pt")
@@ -183,14 +182,13 @@ def train_automate(epoch, path, split, vec_shape=1000, batch_size=64):
         torch.save(netD.state_dict(), root + "Dis.pt")
 
         imagebatch, _ = next(iter(d_loaded))
-
         imagebatch = imagebatch.to(device)
 
         with torch.no_grad():
             vector = netENC(imagebatch)
             fakeImage = netG(vector)
 
-        show_tensor_images(fakeImage)
-        show_tensor_images(imagebatch)
+        show_tensor_images(torch.cat((fakeImage, imagebatch), 0))
 
+    print(f"total Time : {time() - start_of_time} secs ")
     return disF, disR, lossG, lossD
