@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader, random_split
 from PIL import Image
 import torch
 
+
 class Data():
 
     def __init__(self, path,trainset, testset, valset,  mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5), size=(176,176), 
@@ -54,7 +55,6 @@ class Data():
         
         
 if __name__ == "__main__":
-
     data = Data(path="../../fashiondata/img", trainset=50000, testset=2000, valset=712)
     train, test, val = data.getdata()
-    
+
