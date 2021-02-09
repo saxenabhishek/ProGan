@@ -1,77 +1,88 @@
-'''
+"""
 
 Training
 
-'''
+"""
 
 import torch
+import torch.nn as nn
 import torch.optim as optim
 from .dataset import Data
 from .models import Generator, Discriminator, ResNetEncoder
 
 
-def train_step(dataloader, netD, netG, netENC, device):
+def pass_element(img, netD, netG, netENC, optD, optG, criterion):
 
+    netD.zero_grad()
+
+    # Real Image for Disc
+    D1 = netD(img)
+
+    label = torch.ones_like(D1)
+    err_real = criterion(D1, label)
+    err_real.backward()
+
+    # Fake Image for Disc
+    vector = netENC(img)
+    fakeImage = netG(vector)
+    D2 = netD(fakeImage.detach())
+
+    label = torch.zeros_like(D2)
+    err_fake = criterion(D2, label)
+    err_fake.backward()
+
+    optD.step()
+
+    # zero grn and resNet
+    netENC.zero_grad()
+    netG.zero_grad()
+
+    # Genarated Image for Gen
+    label = torch.ones_like(fakeImage)
+    err_GenReal = criterion(fakeImage, label)
+    err_GenReal.backward()
+
+    optG.step()
+
+    return D1.mean().item(), D2.mean().item()
+
+
+def train_step(dataloader, device, netD, netG, netENC, optD, optG, criterion):
+
+    disF = []
+    disR = []
     print("Starting Training Loop...")
-    for data, _ in dataloader:
-        img_Device = data.to(device)
-            
-        netD.zero_grad()
-            
-        output = netD(img_Device)
-            
-        # label = torch.full((b_size,), real_label, dtype=torch.float, device=device)
-        
-        # errD_real = criterion(output, label)
-        # errD_real.backward()
-        # D_x = output.mean().item()
+    for i, data in enumerate(dataloader):
+        data_image = data[0]
+        _ = data[1]
 
-        # noise = torch.randn(b_size, nz, 1, 1, device=device)
-        # fake = netG(noise)
-        # label.fill_(fake_label)
-        # output = netD(fake.detach()).view(-1)
-        # errD_fake = criterion(output, label)
-        # errD_fake.backward()
-        # D_G_z1 = output.mean().item()
-        # errD = errD_real + errD_fake
-        # optimizerD.step()
-        
-        # netG.zero_grad()
-        # label.fill_(real_label) 
-        # output = netD(fake).view(-1)
+        img_Device = data_image.to(device)
+        loss = pass_element(
+            img_Device, netD, netG, netENC, optD, optG, criterion
+        )
 
-        # errG = criterion(output, label)
+        print(i)
 
-        # errG.backward()
-        # D_G_z2 = output.mean().item()
-        # optimizerG.step()
+        disF.append(loss[1])
+        disR.append(loss[0])
 
-        # if i % 50 == 0:
-        #     print('[%d/%d][%d/%d]\tLoss_D: %.4f\tLoss_G: %.4f\tD(x): %.4f\tD(G(z)): %.4f / %.4f'
-        #           % (epoch, num_epochs, i, len(dataloader),
-        #              errD.item(), errG.item(), D_x, D_G_z1, D_G_z2))
+    return
 
-        # G_losses.append(errG.item())
-        # D_losses.append(errD.item())
-
-        # if (iters % 500 == 0) or ((epoch == num_epochs-1) and (i == len(dataloader)-1)):
-        #     with torch.no_grad():
-        #         fake = netG(fixed_noise).detach().cpu()
-        #     img_list.append(vutils.make_grid(fake, padding=2, normalize=True))
-
-        # iters += 1
 
 def train_automate(epoch):
     vec_shape = 1000
-    batch_size = 128
+    batch_size = 12
 
-    d = Data("Data")
-    d_loaded = d.getdata()
+    d = Data("Data_small", batch_size=batch_size, size=(64, 64))
+    split = [2, 1, 0]
+    d_loaded, _, _ = d.getdata(split)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     device = "cpu"
 
-    netG = Generator(device=device, noisedim=500, batch_size=batch_size, vec_shape=vec_shape)
+    netG = Generator(
+        device=device, noisedim=500, batch_size=batch_size, vec_shape=vec_shape
+    )
     netD = Discriminator()
     netRes = ResNetEncoder(vec_shape)
 
@@ -82,14 +93,13 @@ def train_automate(epoch):
     lr = 0.002
     beta1 = 0.5
     optD = optim.Adam(netD.parameters(), lr=lr, betas=(beta1, 0.999))
-    optG = optim.Adam(list(netRes.parameters()) + list(netG.parameters()), lr=lr, betas=(beta1, 0.999))
+    optG = optim.Adam(
+        list(netRes.parameters()) + list(netG.parameters()),
+        lr=lr,
+        betas=(beta1, 0.999),
+    )
 
-    # for i in epoch:
-    #     train_step(d_loaded, netG, netD, netRes, device, optD, optG)
+    criterion = nn.BCEWithLogitsLoss()
 
-    
-
-if __name__ == "__main__" : 
-    train_automate(1)
-    
-    # train(d_loaded, netD, netG, netENC, num_epochs, device):
+    for i in range(epoch):
+        train_step(d_loaded, device, netD, netG, netRes, optD, optG, criterion)
