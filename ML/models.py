@@ -1,6 +1,6 @@
-import torch
 from torch import nn
 from torchvision import models
+import torch
 
 
 class ResNetEncoder(nn.Module):
@@ -26,7 +26,6 @@ class Generator(nn.Module):
         self.vector_shape = kwargs["vec_shape"]
         self.input_shape = self.vector_shape + self.noisedim
         self.im_channels = 3
-        self.batch_size = kwargs["batch_size"]
 
         self.gen = nn.Sequential(
             self.genblock(
@@ -63,8 +62,8 @@ class Generator(nn.Module):
                 kernel_size=4,
                 stride=2,
                 padding=1,
-                last_layer=True,
-            ),  ## final layer returning tanh
+                last_layer=True,  # final layer returning tanh
+            ),
         )
 
     def genblock(
@@ -110,21 +109,22 @@ class Generator(nn.Module):
             len(self.encodedvec), self.encodedvec.shape[1], 1, 1
         )
 
-    def concat(self):
-        self.inputnoise = self.make_noise()
+    def forward(self, feat):
+        bs = feat.shape[0]
+        self.feat = feat
+
+        self.encodedvec = self.concat(bs)
+
+        self.genin = self.geninput()
+        return self.gen(self.genin)
+
+    def concat(self, batch_size):
+        self.inputnoise = self.make_noise(batch_size)
         encoded = torch.cat([self.feat, self.inputnoise], dim=1)
         return encoded
 
-    def make_noise(self):
-        return torch.randn(self.batch_size, self.noisedim, device=self.device)
-
-    def forward(self, feat):
-        self.feat = feat
-        self.encodedvec = self.concat()
-
-        self.genin = self.geninput()
-        # print('Going in ', self.genin.shape)
-        return self.gen(self.genin)
+    def make_noise(self, batch_size):
+        return torch.randn(batch_size, self.noisedim, device=self.device)
 
 
 class Discriminator(torch.nn.Module):
@@ -185,9 +185,7 @@ def main():
 
     resnet = ResNetEncoder(vec_shape)
     resnet = resnet.to(device)
-    gen = Generator(
-        device=device, noisedim=500, batch_size=batch_size, vec_shape=vec_shape
-    )
+    gen = Generator(device=device, noisedim=500, vec_shape=vec_shape)
     gen = gen.to(device)
 
     disc = Discriminator()
