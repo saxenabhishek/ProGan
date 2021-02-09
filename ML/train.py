@@ -148,23 +148,23 @@ def train_automate(epoch, path, split, vec_shape=1000, batch_size=8):
 
     print("Starting Training Loop...")
     starting_time = time()
-    # for i in range(epoch):
-    #     print(f"[Epoch {i + 1}]")
+    for i in range(epoch):
+        print(f"[Epoch {i + 1}]")
 
-    #     train_step(
-    #         d_loaded,
-    #         device,
-    #         netD,
-    #         netG,
-    #         netENC,
-    #         optD,
-    #         optG,
-    #         criterion,
-    #         disF,
-    #         disR,
-    #         lossG,
-    #         lossD,
-    #     )
+        train_step(
+            d_loaded,
+            device,
+            netD,
+            netG,
+            netENC,
+            optD,
+            optG,
+            criterion,
+            disF,
+            disR,
+            lossG,
+            lossD,
+        )
     print(f"total Time : {time() - starting_time}")
     root = "./ModelWeights/"
     torch.save(netENC.state_dict(), root + "RES.pt")
