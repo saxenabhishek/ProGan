@@ -2,4 +2,7 @@ Data
 .vscode
 ML/__pycache__
 Data_small
-ModelWeights
+
+ModelWeights/Dis.pt
+ModelWeights/RES.pt
+ModelWeights/Gen.pt
