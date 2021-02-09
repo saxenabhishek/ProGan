@@ -124,6 +124,16 @@ def train_automate(epoch, path):
     netD = netD.to(device)
     netENC = netENC.to(device)
 
+    def weights_init(m):
+        if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
+            torch.nn.init.normal_(m.weight, 0.0, 0.02)
+        if isinstance(m, nn.BatchNorm2d):
+            torch.nn.init.normal_(m.weight, 0.0, 0.02)
+            torch.nn.init.constant_(m.bias, 0)
+        
+    netG = netG.apply(weights_init)
+    netD = netD.apply(weights_init)
+
     lr = 0.002
     beta1 = 0.5
 
