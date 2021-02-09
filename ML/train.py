@@ -86,8 +86,7 @@ def train_automate(epoch):
     vec_shape = 1000
     batch_size = 8
     split = [2, 1, 0]
-
-    d = Data("Data_small", batch_size=batch_size, size=(64, 64))
+    d = Data("../fashiondata/img", batch_size=batch_size, size=(64, 64))
     d_loaded, _, _ = d.getdata(split)
 
     print(len(d_loaded))
@@ -104,6 +103,16 @@ def train_automate(epoch):
     netG = netG.to(device)
     netD = netD.to(device)
     netENC = netENC.to(device)
+
+    def weights_init(m):
+        if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
+            torch.nn.init.normal_(m.weight, 0.0, 0.02)
+        if isinstance(m, nn.BatchNorm2d):
+            torch.nn.init.normal_(m.weight, 0.0, 0.02)
+            torch.nn.init.constant_(m.bias, 0)
+        
+    netG = netG.apply(weights_init)
+    netD = netD.apply(weights_init)
 
     lr = 0.002
     beta1 = 0.5
