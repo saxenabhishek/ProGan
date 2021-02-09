@@ -54,6 +54,8 @@ def train_step(dataloader, device, netD, netG, netENC, optD, optG, criterion):
     print("Starting Training Loop...")
     for i, data in enumerate(dataloader):
         data_image = data[0]
+
+        # Binary class Male or female
         _ = data[1]
 
         img_Device = data_image.to(device)
@@ -61,12 +63,12 @@ def train_step(dataloader, device, netD, netG, netENC, optD, optG, criterion):
             img_Device, netD, netG, netENC, optD, optG, criterion
         )
 
-        print(i)
-
         disF.append(loss[1])
         disR.append(loss[0])
 
-    return
+        if i % 5 == 0:
+            print(f"Real D {loss[0]} \t Fake D {loss[1]}")
+    return disF, disR
 
 
 def train_automate(epoch):
@@ -102,4 +104,5 @@ def train_automate(epoch):
     criterion = nn.BCEWithLogitsLoss()
 
     for i in range(epoch):
+        print(f"[Epoch {epoch + 1}]")
         train_step(d_loaded, device, netD, netG, netRes, optD, optG, criterion)
