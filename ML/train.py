@@ -11,8 +11,9 @@ from .dataset import Data
 from .models import Generator, Discriminator, ResNetEncoder
 from torchvision.utils import make_grid
 
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 from time import time
+
 
 def show_tensor_images(image_tensor, num_images=64, size=(3, 64, 64)):
 
@@ -21,7 +22,6 @@ def show_tensor_images(image_tensor, num_images=64, size=(3, 64, 64)):
     image_grid = make_grid(image_unflat[:num_images], nrow=5)
     plt.imshow(image_grid.permute(1, 2, 0).squeeze())
     plt.show()
-
 
 
 def pass_element(img, netD, netG, netENC, optD, optG, criterion):
@@ -176,21 +176,21 @@ def train_automate(epoch, path, split, vec_shape=1000, batch_size=64):
             lossD,
         )
         print(f"total Time : {time() - starting_time}")
+
         root = "./ModelWeights/"
         torch.save(netENC.state_dict(), root + "RES.pt")
         torch.save(netG.state_dict(), root + "Gen.pt")
         torch.save(netD.state_dict(), root + "Dis.pt")
 
-       
+        imagebatch, _ = next(iter(d_loaded))
 
-        imagebatch, _  = next(iter(d_loaded))   
+        imagebatch = imagebatch.to(device)
 
         with torch.no_grad():
             vector = netENC(imagebatch)
             fakeImage = netG(vector)
 
-             
         show_tensor_images(fakeImage)
         show_tensor_images(imagebatch)
-    
+
     return disF, disR, lossG, lossD
