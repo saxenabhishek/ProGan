@@ -7,8 +7,10 @@ import ML.train
 import matplotlib.pyplot as plt
 
 
-def main(e, path="data_small"):
-    F, R, lossG, lossD = ML.train.train_automate(e, path)
+def main(e, path="data_small", split=[20, 1, 0], vec_shape=1000, batch_size=8):
+    F, R, lossG, lossD = ML.train.train_automate(
+        e, path, split, vec_shape=1000, batch_size=8
+    )
     plt.plot(R, label="Real")
     plt.plot(F, label="Fake")
     plt.legend()

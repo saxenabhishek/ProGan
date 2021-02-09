@@ -101,11 +101,7 @@ def train_step(
             # st = 0
 
 
-def train_automate(epoch, path):
-    vec_shape = 1000
-    batch_size = 8
-    split = [1, 2, 0]
-
+def train_automate(epoch, path, split, vec_shape=1000, batch_size=8):
     d = Data(path, batch_size=batch_size, size=(64, 64))
     d_loaded, _, _ = d.getdata(split)
 
@@ -130,7 +126,7 @@ def train_automate(epoch, path):
         if isinstance(m, nn.BatchNorm2d):
             torch.nn.init.normal_(m.weight, 0.0, 0.02)
             torch.nn.init.constant_(m.bias, 0)
-        
+
     netG = netG.apply(weights_init)
     netD = netD.apply(weights_init)
 
@@ -152,23 +148,23 @@ def train_automate(epoch, path):
 
     print("Starting Training Loop...")
     starting_time = time()
-    for i in range(epoch):
-        print(f"[Epoch {i + 1}]")
+    # for i in range(epoch):
+    #     print(f"[Epoch {i + 1}]")
 
-        train_step(
-            d_loaded,
-            device,
-            netD,
-            netG,
-            netENC,
-            optD,
-            optG,
-            criterion,
-            disF,
-            disR,
-            lossG,
-            lossD,
-        )
+    #     train_step(
+    #         d_loaded,
+    #         device,
+    #         netD,
+    #         netG,
+    #         netENC,
+    #         optD,
+    #         optG,
+    #         criterion,
+    #         disF,
+    #         disR,
+    #         lossG,
+    #         lossD,
+    #     )
     print(f"total Time : {time() - starting_time}")
     root = "./ModelWeights/"
     torch.save(netENC.state_dict(), root + "RES.pt")
