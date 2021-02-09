@@ -37,7 +37,11 @@ class Data:
         self.folderdata = ImageFolder(self.path, transform=self.transforms)
 
     def getdata(self, split):
+        """
+        split cannot contain 0
 
+        If you want 2 splits only pass 0 in thrid index of split
+        """
         assert len(split) == 3
 
         divisor = 0
@@ -91,7 +95,7 @@ class Data:
 
 
 if __name__ == "__main__":
-    data = Data(path="Data_small", batch_size=12)
-    split = [20, 1, 1]
+    data = Data(path="Data", batch_size=12)
+    split = [5, 1, 0]
     train, test, val = data.getdata(split)
     print(len(train), len(test), len(val))
