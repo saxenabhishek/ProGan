@@ -4,12 +4,13 @@ Main Driver Code
 """
 
 import ML.train
+
 import matplotlib.pyplot as plt
 
 
-def main(e, path="data_small", split=[20, 1, 0], vec_shape=1000, batch_size=8):
+def main(e, path="data", split=[20, 1, 0], vec_shape=1000, batch_size=25):
     F, R, lossG, lossD = ML.train.train_automate(
-        e, path, split, vec_shape=1000, batch_size=8
+        e, path, split, vec_shape=vec_shape, batch_size=batch_size
     )
     plt.plot(R, label="Real")
     plt.plot(F, label="Fake")
