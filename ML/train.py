@@ -30,8 +30,8 @@ class train():
                 
                 self.criterion = nn.BCELoss()
                 beta1 = 0.5
-                self.discopt = optim.Adam(self.disc.parameters(), lr=0.0002, betas=(beta1, 0.999))
-                self.genopt = optim.Adam(list(self.resnet.parameters()) + list(self.gen.parameters()),lr=0.0002, betas=(beta1, 0.999))
+                self.discopt = optim.Adam(self.disc.parameters(), lr=0.002, betas=(beta1, 0.999))
+                self.genopt = optim.Adam(list(self.resnet.parameters()) + list(self.gen.parameters()),lr=0.002, betas=(beta1, 0.999))
                 data = Data(path=path, batch_size=batch_size)
                 self.trainloader, self.testloader, _  = data.getdata(split=[20,1,0])
 
