@@ -2,7 +2,6 @@ from torch import nn
 from torchvision import models
 import torch
 
-
 class ResNetEncoder(nn.Module):
     def __init__(self, vec_shape):
         super(ResNetEncoder, self).__init__()
@@ -22,43 +21,42 @@ class Generator(nn.Module):
         super(Generator, self).__init__()
 
         self.device = kwargs["device"]
-        self.noisedim = kwargs["noisedim"]
+        self.noise_dim = kwargs["noise_dim"]
         self.vector_shape = kwargs["vec_shape"]
-        self.input_shape = self.vector_shape + self.noisedim
-        self.im_channels = 3
+        self.input_shape = self.vector_shape + self.noise_dim
 
         self.gen = nn.Sequential(
-            self.genblock(
+            self.genBlock(
                 input_channels=self.input_shape,
                 hidden_size=512,
                 kernel_size=4,
                 stride=1,
                 padding=0,
             ),
-            self.genblock(
+            self.genBlock(
                 input_channels=512,
                 hidden_size=350,
                 kernel_size=4,
                 stride=2,
                 padding=1,
             ),
-            self.genblock(
+            self.genBlock(
                 input_channels=350,
                 hidden_size=250,
                 kernel_size=4,
                 stride=2,
                 padding=1,
             ),
-            self.genblock(
+            self.genBlock(
                 input_channels=250,
                 hidden_size=150,
                 kernel_size=4,
                 stride=2,
                 padding=1,
             ),
-            self.genblock(
+            self.genBlock(
                 input_channels=150,
-                hidden_size=self.im_channels,
+                hidden_size=3,
                 kernel_size=4,
                 stride=2,
                 padding=1,
@@ -66,7 +64,7 @@ class Generator(nn.Module):
             ),
         )
 
-    def genblock(
+    def genBlock(
         self,
         input_channels,
         hidden_size,
@@ -76,7 +74,7 @@ class Generator(nn.Module):
         last_layer=False,
     ):
         if not last_layer:
-            genblock = nn.Sequential(
+            return nn.Sequential(
                 nn.ConvTranspose2d(
                     input_channels,
                     hidden_size,
@@ -88,9 +86,8 @@ class Generator(nn.Module):
                 nn.BatchNorm2d(hidden_size),
                 nn.ReLU(True),
             )
-
         else:
-            genblock = nn.Sequential(
+            return nn.Sequential(
                 nn.ConvTranspose2d(
                     input_channels,
                     hidden_size,
@@ -102,29 +99,27 @@ class Generator(nn.Module):
                 nn.Tanh(),
             )
 
-        return genblock
-
-    def geninput(self):
-        return self.encodedvec.view(
-            len(self.encodedvec), self.encodedvec.shape[1], 1, 1
+    def genInput(self):
+        return self.encodedVec.view(
+            len(self.encodedVec), self.encodedVec.shape[1], 1, 1
         )
 
-    def forward(self, feat):
-        bs = feat.shape[0]
-        self.feat = feat
-
-        self.encodedvec = self.concat(bs)
-
-        self.genin = self.geninput()
-        return self.gen(self.genin)
-
     def concat(self, batch_size):
-        self.inputnoise = self.make_noise(batch_size)
+        self.inputnoise = self.makeNoise(batch_size)
         encoded = torch.cat([self.feat, self.inputnoise], dim=1)
         return encoded
 
-    def make_noise(self, batch_size):
-        return torch.randn(batch_size, self.noisedim, device=self.device)
+    def makeNoise(self, batch_size):
+        return torch.randn(batch_size, self.noise_dim, device=self.device)
+	
+    def forward(self, feat):
+        batch_size = feat.shape[0]
+        self.feat = feat
+
+        self.encodedVec = self.concat(batch_size)
+
+        self.genIn = self.genInput()
+        return self.gen(self.genIn)
 
 
 class Discriminator(torch.nn.Module):
@@ -132,18 +127,22 @@ class Discriminator(torch.nn.Module):
         super(Discriminator, self).__init__()
 
         self.disc = nn.Sequential(
-            self.discGen(
-                inputChannels=3, outputChannels=128, first_layer=True
+            self.discBlock(
+                inputChannels=3,
+				outputChannels=128,
+				first_layer=True
             ),
-            self.discGen(
-                inputChannels=128, outputChannels=256, first_layer=False
+            self.discBlock(
+                inputChannels=128,
+				outputChannels=256
             ),
-            self.discGen(
-                inputChannels=256, outputChannels=512, first_layer=False
+            self.discBlock(
+                inputChannels=256,
+				outputChannels=512
             ),
         )
 
-    def discGen(self, inputChannels, outputChannels, first_layer=True):
+    def discBlock(self, inputChannels, outputChannels, first_layer=False):
         if first_layer:
             return nn.Sequential(
                 nn.Conv2d(
@@ -179,25 +178,19 @@ def main():
     batch_size = 128
     if torch.cuda.is_available():
         device = "cuda"
-
     else:
         device = "cpu"
 
-    resnet = ResNetEncoder(vec_shape)
-    resnet = resnet.to(device)
-    gen = Generator(device=device, noisedim=500, vec_shape=vec_shape)
+    resNet = ResNetEncoder(vec_shape)
+    resNet = resNet.to(device)
+    gen = Generator(device=device, noise_dim=500, vec_shape=vec_shape)
     gen = gen.to(device)
 
     disc = Discriminator()
 
     for i in range(2):
-        print(gen(resnet(torch.randn(batch_size, 3, 64, 64))).shape)
-        print(
-            disc(
-                gen(resnet(torch.randn(batch_size, 3, 64, 64, device=device)))
-            ).shape
-        )
-
+        print(gen(resNet(torch.randn(batch_size, 3, 64, 64))).shape)
+        print(disc(gen(resNet(torch.randn(batch_size, 3, 64, 64, device=device)))).shape)
 
 if __name__ == "__main__":
     main()
