@@ -85,7 +85,7 @@ class train():
                     
                     testimage = next(iter(self.testloader))
                     testimage = testimage[0]
-                    fake = self.gen(testimage)
+                    fake = self.gen(self.resnet(testimage))
                     self.show_tensor_images(fake)
                     self.show_tensor_images(testimage)
                     mean_generator_loss = 0
