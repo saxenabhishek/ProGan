@@ -24,7 +24,6 @@ class Generator(nn.Module):
         self.noise_dim = kwargs["noise_dim"]
         self.vector_shape = kwargs["vec_shape"]
         self.input_shape = self.vector_shape + self.noise_dim
-        self.im_channels = 3
 
         self.gen = nn.Sequential(
             self.genBlock(
@@ -57,7 +56,7 @@ class Generator(nn.Module):
             ),
             self.genBlock(
                 input_channels=150,
-                hidden_size=self.im_channels,
+                hidden_size=3,
                 kernel_size=4,
                 stride=2,
                 padding=1,
@@ -135,17 +134,15 @@ class Discriminator(torch.nn.Module):
             ),
             self.discBlock(
                 inputChannels=128,
-				outputChannels=256,
-				first_layer=False
+				outputChannels=256
             ),
             self.discBlock(
                 inputChannels=256,
-				outputChannels=512,
-				first_layer=False
+				outputChannels=512
             ),
         )
 
-    def discBlock(self, inputChannels, outputChannels, first_layer=True):
+    def discBlock(self, inputChannels, outputChannels, first_layer=False):
         if first_layer:
             return nn.Sequential(
                 nn.Conv2d(
