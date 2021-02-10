@@ -10,186 +10,126 @@ import torch.optim as optim
 from .dataset import Data
 from .models import Generator, Discriminator, ResNetEncoder
 from torchvision.utils import make_grid
-
+from tqdm.auto import tqdm
 import matplotlib.pyplot as plt
 from time import time
 
 
-def show_tensor_images(image_tensor, num_images=64, size=(3, 64, 64)):
-    image_tensor = (image_tensor + 1) / 2
-    image_unflat = image_tensor.detach().cpu()
-    image_grid = make_grid(image_unflat[:num_images], nrow=5)
-    plt.figure(figsize=(10, 10))
-    plt.imshow(image_grid.permute(1, 2, 0).squeeze())
-    plt.axis(False)
-    plt.show()
+
+class train():
+	def __init__(self, path, epochs, batch_size,split,
+				 vec_shape=100, noisedim=100 ,savedir='ModelWeights'):
+
+				self.device = "cuda" if torch.cuda.is_available() else "cpu"
+				self.gen = Generator(device=self.device, noise_dim=noisedim, vec_shape=vec_shape).to(self.device)
+				self.disc = Discriminator().to(self.device)
+				self.resnet = ResNetEncoder(vec_shape=vec_shape).to(self.device)
+				self.epochs = epochs
+
+				self.root = savedir
+				self.criterion = nn.BCEWithLogitsLoss()
+				beta1 = 0.5
+				lr = 0.002
+				self.discopt = optim.Adam(self.disc.parameters(), lr=lr, betas=(beta1, 0.999))
+				self.genopt = optim.Adam(list(self.resnet.parameters()) + list(self.gen.parameters()),lr=lr, betas=(beta1, 0.999))
+				data = Data(path=path, batch_size=batch_size)
+				self.trainloader, self.testloader, _  = data.getdata(split=split)
+
+				self.gen = self.gen.apply(self.weights_init)
+				self.disc = self.disc.apply(self.weights_init)
+
+				self.discLosses = []
+				self.genLosses = []
+		
+
+	def trainer(self):
+		
+		self.gen.train()
+		self.disc.train()
+
+		cur_step = 0
+		
+		display_step = 500
+		mean_discriminator_loss = 0
+		mean_generator_loss = 0
+
+		for epoch in range(self.epochs):
+			print("training")
+			for image, _ in tqdm(self.trainloader):
+				## training disc
+				
+				image = image.to(self.device)
+				self.discopt.zero_grad()
+				discrealout = self.disc(image)
+				vector = self.resnet(image)
+				discfakeout = self.disc(self.gen(vector).detach())
 
 
-def pass_element(img, netD, netG, netENC, optD, optG, criterion):
-    # || Disc
-    netD.zero_grad()
+				realdiscloss = self.criterion(discrealout, torch.ones_like(discrealout))
+				fakediscloss = self.criterion(discfakeout, torch.zeros_like(discfakeout))
 
-    # Real Image for Disc
-    D1 = netD(img)
+				totaldiscloss = (realdiscloss + fakediscloss) / 2
+				totaldiscloss.backward()
 
-    label = torch.ones_like(D1)
-    err_real = criterion(D1, label)
+				mean_discriminator_loss += totaldiscloss.item() / display_step
+				self.discopt.step()
 
-    # Fake Image for Disc
-    vector = netENC(img)
-    fakeImage = netG(vector)
+				##trianing generator
 
-    D2 = netD(fakeImage.detach())
+				self.genopt.zero_grad()
+				genout = self.disc(self.gen(vector))
+				genoutloss = self.criterion(genout, torch.ones_like(genout))
 
-    label = torch.zeros_like(D2)
-    err_fake = criterion(D2, label)
+				genoutloss.backward()
+				mean_generator_loss += genoutloss.item() / display_step 
 
-    err_totalD = (err_real + err_fake) / 2
-    err_totalD.backward()
+				
+				if cur_step % display_step == 0 and cur_step > 0:
+					print(f"Step {cur_step}: Generator loss: {mean_generator_loss}, \t discriminator loss: {mean_discriminator_loss}")
+					
+					testimage = next(iter(self.testloader))
+					testimage = testimage[0]
+					fake = self.gen(self.resnet(testimage))
+					self.show_tensor_images(fake)
+					self.show_tensor_images(testimage)
 
-    optD.step()
+					self.discLosses.append(mean_discriminator_loss)
+					self.genLosses.append(mean_generator_loss)
 
-    # || Gen
-    # zero grn and resNet
-    netENC.zero_grad()
-    netG.zero_grad()
+					mean_generator_loss = 0
+					mean_discriminator_loss = 0
+			
+			cur_step += 1
 
-    # Genarated Image for Gen
-    D3 = netD(fakeImage)
-    label = torch.ones_like(D3)
-    err_GenReal = criterion(D3, label)
-    err_GenReal.backward()
+			print("Saving weights")
 
-    optG.step()
+			torch.save(self.resnet.state_dict(), self.root + "RES.pt")
+			torch.save(self.gen.state_dict(), self.root + "Gen.pt")
+			torch.save(self.disc.state_dict(), self.root + "Dis.pt")
 
-    return (
-        D1.mean().item(),
-        D3.mean().item(),
-        err_totalD.item(),
-        err_GenReal.item(),
-    )
+	def show_tensor_images(self, image_tensor, num_images=64, size=(3, 64, 64)):
 
+		image_tensor = (image_tensor + 1) / 2
+		image_unflat = image_tensor.detach().cpu()
+		image_grid = make_grid(image_unflat[:num_images], nrow=5)
+		plt.imshow(image_grid.permute(1, 2, 0).squeeze())
+		plt.show()
 
-def train_step(
-    dataloader,
-    device,
-    netD,
-    netG,
-    netENC,
-    optD,
-    optG,
-    criterion,
-    disF,
-    disR,
-    lossG,
-    lossD,
-):
+	def weights_init(self, m):
+		if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
+			torch.nn.init.normal_(m.weight, 0.0, 0.02)
+		if isinstance(m, nn.BatchNorm2d):
+			torch.nn.init.normal_(m.weight, 0.0, 0.02)
+			torch.nn.init.constant_(m.bias, 0)
+	
+	def plot_trainer(self):
+		assert len(self.discLosses) != 0 and len(self.genLosses != 0)
+		plt.plot(self.discLosses, label = 'Discriminator Loss')
+		plt.plot(self.genLosses, label = 'Generator Loss')
+		plt.legend()
+		plt.show()
 
-    for i, data in enumerate(dataloader):
-        # st = time()
-        data_image = data[0]
+if __name__ == "__main__":
+	train = train('../../fashiondata/img', epochs=1, batch_size=100, vec_shape=100)
+	train.trainer()
 
-        # Binary class Male or female
-        _ = data[1]
-
-        img_Device = data_image.to(device)
-
-        loss = pass_element(
-            img_Device, netD, netG, netENC, optD, optG, criterion
-        )
-
-        disR.append(loss[0])
-        disF.append(loss[1])
-        lossD.append(loss[2])
-        lossG.append(loss[3])
-
-        if i % 50 == 0:
-            print(
-                f"|{i}|\t lossD {round(loss[2],4)},\t lossG {round(loss[3],4)}"
-            )
-            # st = 0
-
-
-def train_automate(epoch, path, split, vec_shape=1000, batch_size=64):
-    d = Data(path, batch_size=batch_size, size=(64, 64))
-    d_loaded, _, _ = d.getdata(split)
-
-    print(len(d_loaded))
-
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    # device = "cpu"  # overwrite to CPU for tests
-
-    netG = Generator(
-        device=device, noise_dim=500, vec_shape=vec_shape
-    )
-    netD = Discriminator()
-    netENC = ResNetEncoder(vec_shape)
-
-    netG = netG.to(device)
-    netD = netD.to(device)
-    netENC = netENC.to(device)
-
-    def weights_init(m):
-        if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
-            torch.nn.init.normal_(m.weight, 0.0, 0.02)
-        if isinstance(m, nn.BatchNorm2d):
-            torch.nn.init.normal_(m.weight, 0.0, 0.02)
-            torch.nn.init.constant_(m.bias, 0)
-
-    netG = netG.apply(weights_init)
-    netD = netD.apply(weights_init)
-
-    lr = 0.002
-    beta1 = 0.5
-
-    optD = optim.Adam(netD.parameters(), lr=lr, betas=(beta1, 0.999))
-    optG = optim.Adam(
-        list(netENC.parameters()) + list(netG.parameters()),
-        lr=lr,
-        betas=(beta1, 0.999),
-    )
-
-    criterion = nn.BCEWithLogitsLoss()
-    disF = []
-    disR = []
-    lossG = []
-    lossD = []
-
-    print("Starting Training Loop...")
-    start_of_time = time()
-    for i in range(epoch):
-        print(f"[Epoch {i + 1}]")
-        starting_time = time()
-
-        train_step(
-            d_loaded,
-            device,
-            netD,
-            netG,
-            netENC,
-            optD,
-            optG,
-            criterion,
-            disF,
-            disR,
-            lossG,
-            lossD,
-        )
-        print(f"Epoch Time : {time() - starting_time} secs")
-
-        root = "./ModelWeights/"
-        torch.save(netENC.state_dict(), root + "RES.pt")
-        torch.save(netG.state_dict(), root + "Gen.pt")
-        torch.save(netD.state_dict(), root + "Dis.pt")
-
-        imagebatch, _ = next(iter(d_loaded))
-        imagebatch = imagebatch.to(device)
-
-        with torch.no_grad():
-            vector = netENC(imagebatch)
-            fakeImage = netG(vector)
-
-        show_tensor_images(torch.cat((fakeImage, imagebatch), 0))
-
-    print(f"total Time : {time() - start_of_time} secs ")
-    return disF, disR, lossG, lossD

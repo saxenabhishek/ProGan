@@ -21,7 +21,9 @@ class Generator(nn.Module):
         super(Generator, self).__init__()
 
         self.device = kwargs["device"]
+
         self.noise_dim = kwargs["noise_dim"]
+
         self.vector_shape = kwargs["vec_shape"]
         self.input_shape = self.vector_shape + self.noise_dim
 
