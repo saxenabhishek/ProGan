@@ -99,7 +99,7 @@ class train():
 					mean_generator_loss = 0
 					mean_discriminator_loss = 0
 			
-			cur_step += 1
+			    cur_step += 1
 
 			print("Saving weights")
 
