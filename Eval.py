@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     device = "cpu"
     netG = ML.models.Generator(
-        device=device, noisedim=500, vec_shape=vec_shape
+        device=device, noise_dim=500, vec_shape=vec_shape
     )
 
     netD = ML.models.Discriminator()

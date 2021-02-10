@@ -119,7 +119,7 @@ def train_automate(epoch, path, split, vec_shape=1000, batch_size=64):
     # device = "cpu"  # overwrite to CPU for tests
 
     netG = Generator(
-        device=device, noisedim=500, batch_size=batch_size, vec_shape=vec_shape
+        device=device, noise_dim=500, vec_shape=vec_shape
     )
     netD = Discriminator()
     netENC = ResNetEncoder(vec_shape)
