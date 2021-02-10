@@ -1,7 +1,5 @@
 """
-
 Training
-
 """
 
 import torch
@@ -80,8 +78,11 @@ class train():
 				genout = self.disc(self.gen(vector))
 				genoutloss = self.criterion(genout, torch.ones_like(genout))
 
+
 				genoutloss.backward()
-				mean_generator_loss += genoutloss.item() / display_step 
+				
+                self.genopt.step()
+                mean_generator_loss += genoutloss.item() / display_step 
 
 				
 				if cur_step % display_step == 0 and cur_step > 0:
@@ -99,7 +100,7 @@ class train():
 					mean_generator_loss = 0
 					mean_discriminator_loss = 0
 			
-			    cur_step += 1
+			cur_step += 1
 
 			print("Saving weights")
 
@@ -132,4 +133,3 @@ class train():
 if __name__ == "__main__":
 	train = train('../../fashiondata/img', epochs=1, batch_size=100, vec_shape=100)
 	train.trainer()
-
