@@ -22,7 +22,7 @@ class Generator(nn.Module):
         super(Generator, self).__init__()
 
         self.device = kwargs["device"]
-        # self.noisedim = kwargs["noise_dim"]
+        self.noisedim = kwargs["noise_dim"]
         # self.vector_shape = kwargs["vec_shape"]
         self.input_shape = kwargs["vec_shape"] + kwargs["noise_dim"]
 
@@ -69,7 +69,7 @@ class Generator(nn.Module):
         return encoded
 
     def makeNoise(self, batch_size):
-        return torch.randn(batch_size, self.noise_dim, device=self.device)
+        return torch.randn(batch_size, self.noisedim, device=self.device)
 
     def forward(self, feat):
         batch_size = feat.shape[0]
