@@ -6,15 +6,12 @@ from ML.dataset import Data
 
 if __name__ == "__main__":
     vec_shape = 1000
-    batch_size = 8
 
-    root = "./ModelWeights/"
+    root = "55epoch/"
 
-    device = "cpu"
-    netG = ML.models.Generator(
-        device=device, noisedim=500, vec_shape=vec_shape
-    )
+    print(f"Evalutating with VecSize {vec_shape} from {root}")
 
+    netG = ML.models.Generator(device="cpu", noisedim=500, vec_shape=vec_shape)
     netD = ML.models.Discriminator()
     netENC = ML.models.ResNetEncoder(vec_shape)
 
@@ -26,11 +23,12 @@ if __name__ == "__main__":
     # netD.eval()
     # netENC.eval()
 
-    d = Data("Data", batch_size=batch_size, size=(64, 64))
+    numrows = 5
+    d = Data(path="Data", batch_size=numrows, size=(64, 64))
 
-    bs = 4
-    d_loaded = DataLoader(d.folderdata, bs, shuffle=True)
+    d_loaded = DataLoader(d.folderdata, numrows, shuffle=True)
 
+    # get one random batch of images
     imgs = next(iter(d_loaded))[0]
 
     with torch.no_grad():
@@ -38,10 +36,10 @@ if __name__ == "__main__":
         fakeImages = netG(vector)
 
     _, ax = plt.subplots(
-        2, bs, squeeze=False, sharex=True, sharey=True, figsize=(8, 4)
+        2, numrows, squeeze=False, sharex=True, sharey=True, figsize=(8, 4)
     )
 
-    for i in range(bs):
+    for i in range(numrows):
         ax[0, i].imshow(
             (fakeImages[i].permute(1, 2, 0).numpy() + [1, 1, 1]) / [2, 2, 2]
         )
@@ -51,4 +49,6 @@ if __name__ == "__main__":
             (imgs[i].permute(1, 2, 0).numpy() + [1, 1, 1]) / [2, 2, 2]
         )
         ax[1, i].axis(False)
+
+    plt.subplots_adjust(wspace=0, hspace=0)
     plt.show()
