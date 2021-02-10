@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from time import time
 
 
+
 class train():
 	def __init__(self, path, epochs, batch_size,split,
 				 vec_shape=100, noisedim=100 ,savedir='ModelWeights'):
@@ -131,3 +132,4 @@ class train():
 if __name__ == "__main__":
 	train = train('../../fashiondata/img', epochs=1, batch_size=100, vec_shape=100)
 	train.trainer()
+
