@@ -16,40 +16,45 @@ from time import time
 
 
 class train():
-    def __init__(self, path, epochs, batch_size,
-                 vec_shape=100, noisedim=100):
+    def __init__(self, path, epochs, batch_size,split,
+                 vec_shape=100, noisedim=100 ,savedir='ModelWeights'):
 
-                self.device = "cpu"
-                if torch.cuda.is_available():
-                    self.device = "cuda"
-                self.gen = Generator(device=self.device, noisedim=100, vec_shape=100).to(self.device)
+                self.device = "cuda" if torch.cuda.is_available() else "cpu"
+                self.gen = Generator(device=self.device, noise_dim=noisedim, vec_shape=vec_shape).to(self.device)
                 self.disc = Discriminator().to(self.device)
-                self.resnet = ResNetEncoder(vec_shape=100).to(self.device)
+                self.resnet = ResNetEncoder(vec_shape=vec_shape).to(self.device)
                 self.epochs = epochs
 
-                
-                self.criterion = nn.BCELoss()
+                self.root = savedir
+                self.criterion = nn.BCEWithLogitsLoss()
                 beta1 = 0.5
-                self.discopt = optim.Adam(self.disc.parameters(), lr=0.002, betas=(beta1, 0.999))
-                self.genopt = optim.Adam(list(self.resnet.parameters()) + list(self.gen.parameters()),lr=0.002, betas=(beta1, 0.999))
+                lr = 0.002
+                self.discopt = optim.Adam(self.disc.parameters(), lr=lr, betas=(beta1, 0.999))
+                self.genopt = optim.Adam(list(self.resnet.parameters()) + list(self.gen.parameters()),lr=lr, betas=(beta1, 0.999))
                 data = Data(path=path, batch_size=batch_size)
-                self.trainloader, self.testloader, _  = data.getdata(split=[20,1,0])
+                self.trainloader, self.testloader, _  = data.getdata(split=split)
 
                 self.gen = self.gen.apply(self.weights_init)
                 self.disc = self.disc.apply(self.weights_init)
+        
 
     def trainer(self):
         
         self.gen.train()
         self.disc.train()
 
-        cur = 0
-        display = 500
+        cur_step = 0
+        
+        display_step = 500
+        mean_discriminator_loss = 0
+        mean_generator_loss = 0
 
         for epoch in range(self.epochs):
+            print("training")
             for image, _ in tqdm(self.trainloader):
                 ## training disc
-
+                
+                image = image.to(self.device)
                 self.discopt.zero_grad()
                 discrealout = self.disc(image)
                 vector = self.resnet(image)
@@ -72,19 +77,27 @@ class train():
                 genoutloss = self.criterion(genout, torch.ones_like(genout))
 
                 genoutloss.backward()
-                mean_generator_loss += genoutloss.item() / display_step
+                mean_generator_loss += genoutloss.item() / display_step 
 
-
+                
                 if cur_step % display_step == 0 and cur_step > 0:
-                    print(f"Step {cur_step}: Generator loss: {mean_generator_loss}, discriminator loss: {mean_discriminator_loss}")
+                    print(f"Step {cur_step}: Generator loss: {mean_generator_loss}, \t discriminator loss: {mean_discriminator_loss}")
                     
-                    fake = self.gen(vector)
+                    testimage = next(iter(self.testloader))
+                    testimage = testimage[0]
+                    fake = self.gen(testimage)
                     self.show_tensor_images(fake)
-                    self.show_tensor_images(image)
+                    self.show_tensor_images(testimage)
                     mean_generator_loss = 0
                     mean_discriminator_loss = 0
             
             cur_step += 1
+
+            print("Saving weights")
+
+            torch.save(self.resnet.state_dict(), self.root + "RES.pt")
+            torch.save(self.gen.state_dict(), self.root + "Gen.pt")
+            torch.save(self.disc.state_dict(), self.root + "Dis.pt")
 
     def show_tensor_images(self, image_tensor, num_images=64, size=(3, 64, 64)):
 
