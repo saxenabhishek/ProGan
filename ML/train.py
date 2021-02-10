@@ -16,14 +16,16 @@ from time import time
 
 
 class train:
-    def __init__(self, path, epochs, batch_size, split, vec_shape=100, noisedim=100, savedir="ModelWeights"):
+    def __init__(
+        self, path, epochs, batch_size, split, display_step=50, vec_shape=100, noisedim=100, savedir="ModelWeights"
+    ):
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.gen = Generator(device=self.device, noise_dim=noisedim, vec_shape=vec_shape).to(self.device)
         self.disc = Discriminator().to(self.device)
         self.resnet = ResNetEncoder(vec_shape=vec_shape).to(self.device)
         self.epochs = epochs
-
+        self.display_step = display_step
         self.root = savedir
         self.criterion = nn.BCEWithLogitsLoss()
         beta1 = 0.5
@@ -32,7 +34,7 @@ class train:
         self.genopt = optim.Adam(
             list(self.resnet.parameters()) + list(self.gen.parameters()), lr=lr, betas=(beta1, 0.999)
         )
-        data = Data(path=path, batch_size=batch_size)
+        data = Data(path=path, batch_size=batch_size, size=(64, 64))
         self.trainloader, self.testloader, _ = data.getdata(split=split)
 
         self.gen = self.gen.apply(self.weights_init)
@@ -47,10 +49,11 @@ class train:
         self.disc.train()
 
         cur_step = 0
-
-        display_step = 500
+        display_step = self.display_step
         mean_discriminator_loss = 0
         mean_generator_loss = 0
+        testimage = next(iter(self.testloader))
+        testimage = testimage[0].to(self.device)
 
         for epoch in range(self.epochs):
             print("training")
@@ -80,14 +83,11 @@ class train:
 
                 genoutloss.backward()
                 mean_generator_loss += genoutloss.item() / display_step
-
+                # print(cur_step)
                 if cur_step % display_step == 0 and cur_step > 0:
                     print(
                         f"Step {cur_step}: Generator loss: {mean_generator_loss}, \t discriminator loss: {mean_discriminator_loss}"
                     )
-
-                    testimage = next(iter(self.testloader))
-                    testimage = testimage[0]
                     fake = self.gen(self.resnet(testimage))
                     self.show_tensor_images(fake)
                     self.show_tensor_images(testimage)
@@ -98,7 +98,7 @@ class train:
                     mean_generator_loss = 0
                     mean_discriminator_loss = 0
 
-            cur_step += 1
+                cur_step += 1
 
             print("Saving weights")
 
@@ -112,6 +112,7 @@ class train:
         image_unflat = image_tensor.detach().cpu()
         image_grid = make_grid(image_unflat[:num_images], nrow=5)
         plt.imshow(image_grid.permute(1, 2, 0).squeeze())
+        plt.axis(False)
         plt.show()
 
     def weights_init(self, m):
@@ -122,7 +123,7 @@ class train:
             torch.nn.init.constant_(m.bias, 0)
 
     def plot_trainer(self):
-        assert len(self.discLosses) != 0 and len(self.genLosses != 0)
+        assert len(self.discLosses) != 0 and len(self.genLosses) != 0
         plt.plot(self.discLosses, label="Discriminator Loss")
         plt.plot(self.genLosses, label="Generator Loss")
         plt.legend()
