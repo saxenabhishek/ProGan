@@ -7,8 +7,13 @@ Training
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from .dataset import Data
-from .models import Generator, Discriminator, ResNetEncoder
+
+import sys
+
+sys.path.append("./ML")
+
+from Definitions.dataset import Data
+from Definitions.models import Generator, Discriminator, ResNetEncoder
 from torchvision.utils import make_grid
 from tqdm.auto import tqdm
 import matplotlib.pyplot as plt
