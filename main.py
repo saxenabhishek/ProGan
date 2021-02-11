@@ -10,7 +10,7 @@ from time import time
 
 def main():
     modeltrain = train(
-        path="Data", epochs=1, batch_size=4, vec_shape=100, split=[1, 2000, 0], noisedim=100, display_step=1
+        path="Data", epochs=1, batch_size=10, vec_shape=100, split=[1, 20, 0], noisedim=100, display_step=50
     )
     starting = time()
     modeltrain.trainer()

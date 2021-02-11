@@ -39,7 +39,7 @@ class train:
         self.genopt = optim.Adam(
             list(self.resnet.parameters()) + list(self.gen.parameters()), lr=lr, betas=(beta1, 0.999)
         )
-        data = Data(path=path, batch_size=batch_size, size=(64, 64))
+        data = Data(path=path, batch_size=batch_size, size1=(225, 225), size2=(64, 64))
         self.trainloader, self.testloader, _ = data.getdata(split=split)
 
         self.gen = self.gen.apply(self.weights_init)
@@ -58,17 +58,19 @@ class train:
         mean_discriminator_loss = 0
         mean_generator_loss = 0
         testimage = next(iter(self.testloader))
-        testimage = testimage[0].to(self.device)
+        testimage = testimage["S2"].to(self.device)
 
         for epoch in range(self.epochs):
             print("training")
-            for image, _ in tqdm(self.trainloader):
+            for batch in tqdm(self.trainloader):
                 ## training disc
 
-                image = image.to(self.device)
+                imageS1 = batch["S1"].to(self.device)
+                imageS2 = batch["S2"].to(self.device)
+
                 self.discopt.zero_grad()
-                discrealout = self.disc(image)
-                vector = self.resnet(image)
+                discrealout = self.disc(imageS2)
+                vector = self.resnet(imageS1)
                 discfakeout = self.disc(self.gen(vector).detach())
 
                 realdiscloss = self.criterion(discrealout, torch.ones_like(discrealout))
