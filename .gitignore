@@ -1,6 +1,8 @@
 Data
 .vscode
 ML/__pycache__
+
+ML/Definitions/__pycache__
 Data_small
 
 ModelWeights/Dis.pt
