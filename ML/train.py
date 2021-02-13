@@ -34,12 +34,12 @@ class train:
         self.root = savedir + "/"
         self.criterion = nn.BCEWithLogitsLoss()
         beta1 = 0.5
-        lr = 0.002
+        lr = 0.003
         self.discopt = optim.Adam(self.disc.parameters(), lr=lr, betas=(beta1, 0.999))
         self.genopt = optim.Adam(
             list(self.resnet.parameters()) + list(self.gen.parameters()), lr=lr, betas=(beta1, 0.999)
         )
-        data = Data(path=path, batch_size=batch_size, size1=(225, 225), size2=(64, 64))
+        data = Data(path=path, batch_size=batch_size, size1=(225, 225), size2=(8, 8))
         self.trainloader, self.testloader, _ = data.getdata(split=split)
 
         self.gen = self.gen.apply(self.weights_init)

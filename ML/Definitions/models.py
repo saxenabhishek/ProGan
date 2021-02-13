@@ -28,11 +28,11 @@ class Generator(nn.Module):
 
         self.gen = nn.Sequential(
             self.genBlock(input_channels=self.input_shape, hidden_size=512, kernel_size=4, stride=1, padding=0,),
-            self.genBlock(input_channels=512, hidden_size=350, kernel_size=4, stride=2, padding=1,),
-            self.genBlock(input_channels=350, hidden_size=250, kernel_size=4, stride=2, padding=1,),
-            self.genBlock(input_channels=250, hidden_size=150, kernel_size=4, stride=2, padding=1,),
+            self.genBlock(input_channels=512, hidden_size=256, kernel_size=4, stride=2, padding=1,),
+            self.genBlock(input_channels=256, hidden_size=128, kernel_size=4, stride=2, padding=1,),
+            self.genBlock(input_channels=128, hidden_size=64, kernel_size=4, stride=2, padding=1,),
             self.genBlock(
-                input_channels=150,
+                input_channels=64,
                 hidden_size=3,
                 kernel_size=4,
                 stride=2,
@@ -50,7 +50,7 @@ class Generator(nn.Module):
                     input_channels, hidden_size, kernel_size=kernel_size, stride=stride, padding=padding, bias=False,
                 ),
                 nn.BatchNorm2d(hidden_size),
-                nn.ReLU(True),
+                nn.PReLU(),
             )
         else:
             return nn.Sequential(
@@ -129,7 +129,7 @@ def main():
         device = "cuda"
     else:
         device = "cpu"
-
+    device = "cpu"
     resNet = ResNetEncoder(vec_shape)
     resNet = resNet.to(device)
     gen = Generator(device=device, noise_dim=500, vec_shape=vec_shape)
@@ -137,9 +137,9 @@ def main():
 
     disc = Discriminator()
 
-    for i in range(2):
-        print(gen(resNet(torch.randn(batch_size, 3, 64, 64))).shape)
-        print(disc(gen(resNet(torch.randn(batch_size, 3, 64, 64, device=device)))).shape)
+    print(resNet(torch.randn(batch_size, 3, 225, 225)).shape)
+    print(gen(resNet(torch.randn(batch_size, 3, 225, 225))).shape)
+    print(disc(gen(resNet(torch.randn(batch_size, 3, 64, 64, device=device)))).shape)
 
 
 if __name__ == "__main__":
