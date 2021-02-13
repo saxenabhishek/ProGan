@@ -8,4 +8,6 @@ Data_small
 ModelWeights/Dis.pt
 ModelWeights/RES.pt
 ModelWeights/Gen.pt
+
+Landmarks_weights
 55epoch
