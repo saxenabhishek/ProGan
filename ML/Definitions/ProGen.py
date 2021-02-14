@@ -51,13 +51,13 @@ class ProGen(nn.Module):
 
         x = self.fc(x).reshape(bs, self.max_filter, 1, 1)
         x = self.first_layer(x)
-        print(x.shape)
+
         for i in range(depth):
             before_x = x
             x = self.gen_blocks[i](before_x)
-            print(x.shape)
 
-        before_x = self.last_layer[depth - 1](F.interpolate(before_x, scale_factor=2))
+        if depth != 0:
+            before_x = self.last_layer[depth - 1](F.interpolate(before_x, scale_factor=2))
         x = self.last_layer[depth](x)
 
         return before_x, x
@@ -65,5 +65,10 @@ class ProGen(nn.Module):
 
 if __name__ == "__main__":
     g = ProGen()
-    out = g(torch.rand(1, 512), 3)
-    print(out[0].shape, out[1].shape)
+    out = g(torch.rand(1, 512), 1)
+
+    if out[0] == None:
+        print("No layer before this one ")
+    else:
+        print(out[0].shape)
+    print(out[1].shape)
