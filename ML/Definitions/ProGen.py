@@ -44,7 +44,7 @@ class ProGen(nn.Module):
             nn.LocalResponseNorm(out_ch, alpha=1, beta=0.5, k=1e-8),
         )
 
-    def forward(self, x, depth):
+    def forward(self, x, depth, alpha=1):
         assert depth <= self.layer_depth
         bs = x.shape[0]
         before_x = None
@@ -56,19 +56,17 @@ class ProGen(nn.Module):
             before_x = x
             x = self.gen_blocks[i](before_x)
 
-        if depth != 0:
-            before_x = self.last_layer[depth - 1](F.interpolate(before_x, scale_factor=2))
         x = self.last_layer[depth](x)
 
-        return before_x, x
+        if depth != 0:
+            before_x = self.last_layer[depth - 1](F.interpolate(before_x, scale_factor=2))
+            return (1 - alpha) * before_x + alpha * x
+        else:
+            return x
 
 
 if __name__ == "__main__":
     g = ProGen()
-    out = g(torch.rand(1, 512), 1)
-
-    if out[0] == None:
-        print("No layer before this one ")
-    else:
-        print(out[0].shape)
-    print(out[1].shape)
+    print
+    out = g(torch.rand(1, 512), 4, 0.5)
+    print(out.shape)
