@@ -77,8 +77,6 @@ class ProDis(nn.Module):
 
 if __name__ == "__main__":
     d = ProDis()
-
-    print(d)
     out = d(torch.rand(12, 3, 128, 128), 5)
 
-    print(out.shape)
+    print(out)
