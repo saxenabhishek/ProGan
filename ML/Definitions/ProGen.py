@@ -4,10 +4,10 @@ import torch.nn.functional as F
 
 
 class ProGen(nn.Module):
-    def __init__(self, layer_dept=5):
+    def __init__(self, layer_dept=5, Uper_feat_Exp=9):
         super(ProGen, self).__init__()
         self.layer_depth = layer_dept
-        self.Uper_feat_Exp = 9
+        self.Uper_feat_Exp = Uper_feat_Exp
         self.max_filter = 2 ** self.Uper_feat_Exp
 
         self.fc = nn.Linear(self.max_filter, self.max_filter)
@@ -15,8 +15,9 @@ class ProGen(nn.Module):
             nn.Conv2d(self.max_filter, self.max_filter, 4, 1, 3),
             nn.LeakyReLU(0.2),
             nn.Conv2d(self.max_filter, self.max_filter, 3, 1, 1),
+            nn.InstanceNorm2d(self.max_filter),
             nn.LeakyReLU(0.2),
-            nn.LocalResponseNorm(self.max_filter, alpha=1, beta=0.5, k=1e-8),
+            # nn.LocalResponseNorm(self.max_filter, alpha=1, beta=0.5, k=1e-8),
         )
 
         self.gen_blocks = nn.ModuleList(
