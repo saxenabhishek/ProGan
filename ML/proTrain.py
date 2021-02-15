@@ -25,7 +25,9 @@ from time import time
 
 
 class train:
-    def __init__(self, path, batch_size, split, savedir="ModelWeights", merge_samples_Const=1, loadmodel=False):
+    def __init__(
+        self, path, batch_size, split, savedir="ModelWeights", merge_samples_Const=1, loadmodel=False, lr=0.003
+    ):
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         # self.device = "cpu"
@@ -38,7 +40,6 @@ class train:
         self.root = savedir + "/"
         self.criterion = nn.BCEWithLogitsLoss()
         beta1 = 0.0
-        lr = 0.003
         self.batch_size = batch_size
 
         self.currentSize = (4, 4)
