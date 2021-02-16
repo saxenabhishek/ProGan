@@ -23,7 +23,7 @@ class ProDis(nn.Module):
 
         self.last_layer = nn.Sequential(
             nn.Conv2d(self.max_filter + 1, self.max_filter, 3, 1, 1),
-            nn.InstanceNorm2d(self.max_filter),
+            nn.InstanceNorm2d(self.max_filter, affine=True),
             nn.LeakyReLU(0.2),
             nn.Conv2d(self.max_filter, self.max_filter, 4, 1),
             nn.LeakyReLU(0.2),
@@ -37,11 +37,10 @@ class ProDis(nn.Module):
     def block(self, in_ch, out_ch):
         return nn.Sequential(
             nn.Conv2d(in_ch, out_ch, 3, 1, 1),
-            # nn.LocalResponseNorm(out_ch, alpha=1, beta=0.5, k=1e-8),
-            nn.InstanceNorm2d(out_ch),
+            nn.InstanceNorm2d(out_ch, affine=True),
             nn.LeakyReLU(0.2),
             nn.Conv2d(out_ch, out_ch, 3, 1, 1),
-            nn.InstanceNorm2d(out_ch),
+            nn.InstanceNorm2d(out_ch, affine=True),
             nn.LeakyReLU(0.2),
             nn.AvgPool2d(2),
         )

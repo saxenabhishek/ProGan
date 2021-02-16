@@ -89,4 +89,7 @@ if __name__ == "__main__":
     data = Data(path="Data", batch_size=12)
     split = [5, 1, 0]
     train, test, val = data.getdata(split)
-    print(len(train), len(test), len(val))
+    print(test.dataset.dataset.s2)
+    test.dataset.dataset.s2 = (12, 12)
+    print(next(iter(test))["S2"].shape)
+    # print(len(train), len(test), len(val))

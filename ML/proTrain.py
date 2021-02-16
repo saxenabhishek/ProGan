@@ -40,6 +40,7 @@ class train:
         self.root = savedir + "/"
         self.criterion = nn.BCEWithLogitsLoss()
         beta1 = 0.0
+        lr = 0.003
         self.batch_size = batch_size
 
         self.currentSize = (4, 4)
@@ -117,7 +118,6 @@ class train:
                 genout = self.disc(
                     self.gen(noise, self.currentLayerDepth, self.alpha), self.currentLayerDepth, self.alpha
                 )
-
                 genoutloss = self.criterion(genout, torch.ones_like(genout))
 
                 genoutloss.backward()
@@ -143,6 +143,17 @@ class train:
 
             torch.save(self.gen.state_dict(), self.root + "Gen.pt")
             torch.save(self.disc.state_dict(), self.root + "Dis.pt")
+
+    def step_up(self):
+        self.currentLayerDepth += 1
+
+        self.previousSize = self.currentSize
+        self.currentSize = (self.currentSize[0] * 2,) * 2
+
+        print(self.previousSize, self.currentSize)
+
+        self.trainloader.dataset.dataset.s1 = self.currentSize
+        self.trainloader.dataset.dataset.s2 = self.previousSize
 
     def show_tensor_images(self, image_tensor, num_images=64, size=(3, 64, 64)):
 
@@ -170,6 +181,7 @@ class train:
 
 if __name__ == "__main__":
     gan = train("./Data", 5, [1, 200, 0], "./ModelWeights",)
-    gan.trainer(20, 1000)
+    gan.step_up()
+    gan.trainer(20, 100)
     gan.plot_trainer()
 
