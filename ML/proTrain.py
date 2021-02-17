@@ -14,7 +14,7 @@ import sys
 sys.path.append("./ML")
 
 from Definitions.dataset import Data
-
+import math
 from Definitions.ProGen import ProGen
 from Definitions.ProDis import ProDis
 
@@ -38,9 +38,8 @@ class train:
         # self.epochs = epochs
         # self.display_step = display_step
         self.root = savedir + "/"
-        self.criterion = nn.BCEWithLogitsLoss()
-        beta1 = 0.0
-        lr = 0.003
+        self.criterion = nn.MSELoss()
+        beta1 = 0.5
         self.batch_size = batch_size
 
         self.currentSize = (4, 4)
@@ -127,7 +126,7 @@ class train:
                 # print(cur_step)
                 if cur_step % display_step == 0 and cur_step > 0:
                     print(
-                        f"Step {cur_step}: Generator loss: {mean_generator_loss}, \t discriminator loss: {mean_discriminator_loss}"
+                        f"[{epoch}] Step {cur_step}: Generator loss: {mean_generator_loss}, \t discriminator loss: {mean_discriminator_loss}  a:{self.alpha}"
                     )
                     fake = self.gen(test_noise, self.currentLayerDepth, self.alpha)
                     self.show_tensor_images(torch.cat((fake, real_image), 0))
@@ -154,6 +153,7 @@ class train:
 
         self.trainloader.dataset.dataset.s1 = self.currentSize
         self.trainloader.dataset.dataset.s2 = self.previousSize
+        self.alpha = 0
 
     def show_tensor_images(self, image_tensor, num_images=64, size=(3, 64, 64)):
 
