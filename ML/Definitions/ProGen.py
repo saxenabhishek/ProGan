@@ -13,9 +13,10 @@ class ProGen(nn.Module):
         self.fc = nn.Linear(self.max_filter, self.max_filter)
         self.first_layer = nn.Sequential(
             nn.Conv2d(self.max_filter, self.max_filter, 4, 1, 3),
+            nn.BatchNorm2d(self.max_filter),
             nn.LeakyReLU(0.2),
             nn.Conv2d(self.max_filter, self.max_filter, 3, 1, 1),
-            nn.InstanceNorm2d(self.max_filter, affine=True),
+            nn.BatchNorm2d(self.max_filter),
             nn.LeakyReLU(0.2),
             # nn.LocalResponseNorm(self.max_filter, alpha=1, beta=0.5, k=1e-8),
         )
@@ -38,10 +39,10 @@ class ProGen(nn.Module):
         return nn.Sequential(
             nn.UpsamplingNearest2d(scale_factor=2),
             nn.Conv2d(in_ch, out_ch, 3, 1, 1),
-            nn.InstanceNorm2d(out_ch, affine=True),
+            nn.BatchNorm2d(out_ch),
             nn.LeakyReLU(0.2),
             nn.Conv2d(out_ch, out_ch, 3, 1, 1),
-            nn.InstanceNorm2d(out_ch, affine=True),
+            nn.BatchNorm2d(out_ch),
             nn.LeakyReLU(0.2),
         )
 
