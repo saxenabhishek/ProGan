@@ -60,7 +60,7 @@ class ProGen(nn.Module):
 
         x = self.last_layer[depth](x)
 
-        if depth != 0:
+        if depth != 0 and alpha < 1:
             before_x = self.last_layer[depth - 1](F.interpolate(before_x, scale_factor=2))
             return (1 - alpha) * before_x + alpha * x
         else:
