@@ -159,7 +159,8 @@ class train:
 
         image_tensor = (image_tensor + 1) / 2
         image_unflat = image_tensor.detach().cpu()
-        image_grid = make_grid(image_unflat[:num_images], nrow=5)
+        plt.figure(figsize=(5, 5))
+        image_grid = make_grid(image_unflat[:num_images], nrow=int(math.sqrt(image_tensor.shape[0])))
         plt.imshow(image_grid.permute(1, 2, 0).squeeze())
         plt.axis(False)
         plt.show()
