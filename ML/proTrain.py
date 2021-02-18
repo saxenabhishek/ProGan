@@ -26,7 +26,7 @@ from time import time
 
 class train:
     def __init__(
-        self, path, batch_size, split, savedir="ModelWeights", merge_samples_Const=1, loadmodel=False, lr=0.003
+        self, path, batch_size, split, savedir="ModelWeights", merge_samples_Const=1, loadmodel=False, lr=[0.003, 0.001]
     ):
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -46,8 +46,8 @@ class train:
         self.previousSize = (2, 2)
         self.currentLayerDepth = 0
 
-        self.discopt = optim.Adam(self.disc.parameters(), lr=lr, betas=(beta1, 0.999))
-        self.genopt = optim.Adam(self.gen.parameters(), lr=lr, betas=(beta1, 0.999))
+        self.discopt = optim.Adam(self.disc.parameters(), lr=lr[1], betas=(beta1, 0.999))
+        self.genopt = optim.Adam(self.gen.parameters(), lr=lr[0], betas=(beta1, 0.999))
         data = Data(path=path, batch_size=batch_size, size1=self.currentSize, size2=self.previousSize, num_workers=1)
         self.trainloader, self.testloader, _ = data.getdata(split=split)
 
