@@ -62,9 +62,9 @@ class ProGen(nn.Module):
 
         if depth != 0 and alpha < 1:
             before_x = self.last_layer[depth - 1](F.interpolate(before_x, scale_factor=2))
-            return (1 - alpha) * before_x + alpha * x
+            return torch.tanh((1 - alpha) * before_x + alpha * x)
         else:
-            return x
+            return torch.tanh(x)
 
 
 if __name__ == "__main__":
