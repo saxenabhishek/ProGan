@@ -74,7 +74,7 @@ class train:
         cur_step = 0
         mean_discriminator_loss = 0
         mean_generator_loss = 0
-        test_noise = torch.rand(self.batch_size, 512).to(self.device)
+        test_noise = torch.randn(self.batch_size, 512).to(self.device)
 
         for epoch in range(epochs):
             print("training")
@@ -91,7 +91,7 @@ class train:
 
                 real_image = (1 - self.alpha) * imageS2 + self.alpha * imageS1
 
-                noise = torch.rand(self.batch_size, 512).to(self.device)
+                noise = torch.randn(self.batch_size, 512).to(self.device)
 
                 self.discopt.zero_grad()
 
@@ -194,6 +194,8 @@ class train:
 if __name__ == "__main__":
     gan = train("./Data", 5, [1, 200, 0], "./ModelWeights",)
     gan.step_up()
+    gan.trainer(1, 100)
+    gan.step_dn()
     gan.trainer(20, 100)
     gan.plot_trainer()
 
