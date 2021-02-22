@@ -52,7 +52,7 @@ class train:
         self.trainloader, self.testloader, _ = data.getdata(split=split)
 
         self.alpha = 1
-        self.alpha_unit_update = 1 / len(self.trainloader)  # / merge_samples_Const
+        self.alpha_unit_update = 1 / len(self.trainloader) / merge_samples_Const
         print(self.alpha_unit_update)
 
         if self.continuetraining == False:
@@ -123,16 +123,15 @@ class train:
                 mean_generator_loss += genoutloss.item()
                 self.genopt.step()
 
+                self.discLosses.append(totaldiscloss.item())
+                self.genLosses.append(genoutloss.item())
                 # print(cur_step)
                 if cur_step % display_step == 0 and cur_step > 0:
                     print(
-                        f"[{epoch}] Step {cur_step}: Generator loss: {mean_generator_loss}, \t discriminator loss: {mean_discriminator_loss}  a:{self.alpha}"
+                        f"[{epoch}] Step {cur_step}: Generator loss: {mean_generator_loss /display_step}, \t discriminator loss: {mean_discriminator_loss/display_step}  a:{self.alpha}"
                     )
                     fake = self.gen(test_noise, self.currentLayerDepth, self.alpha)
                     self.show_tensor_images(torch.cat((fake, real_image), 0))
-
-                    self.discLosses.append(mean_discriminator_loss / display_step)
-                    self.genLosses.append(mean_generator_loss / display_step)
 
                     mean_generator_loss = 0
                     mean_discriminator_loss = 0
