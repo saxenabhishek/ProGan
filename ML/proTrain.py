@@ -155,6 +155,18 @@ class train:
         self.trainloader.dataset.dataset.s2 = self.previousSize
         self.alpha = 0
 
+    def step_dn(self):
+        self.currentLayerDepth -= 1
+
+        self.currentSize = (self.currentSize[0] // 2,) * 2
+        self.previousSize = (self.currentSize[0] // 2,) * 2
+
+        print(self.previousSize, self.currentSize)
+
+        self.trainloader.dataset.dataset.s1 = self.currentSize
+        self.trainloader.dataset.dataset.s2 = self.previousSize
+        self.alpha = 0
+
     def show_tensor_images(self, image_tensor, num_images=64, size=(3, 64, 64)):
 
         image_tensor = (image_tensor + 1) / 2
