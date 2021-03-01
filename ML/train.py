@@ -32,7 +32,7 @@ class train:
         self.epochs = epochs
         self.display_step = display_step
         self.root = savedir + "/"
-        self.criterion = nn.BCEWithLogitsLoss()
+        self.criterion = nn.MSELoss()
         beta1 = 0.5
         lr = 0.002
         self.discopt = optim.Adam(self.disc.parameters(), lr=lr, betas=(beta1, 0.999))
