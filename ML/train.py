@@ -21,6 +21,7 @@ from time import time
 
 
 class train:
+
     def __init__(
         self, path, epochs, batch_size, split, display_step=50, vec_shape=100, noisedim=100, savedir="ModelWeights"
     ):
@@ -137,9 +138,8 @@ class train:
         plt.plot(self.genLosses, label="Generator Loss")
         plt.legend()
         plt.show()
-
-
+        
 if __name__ == "__main__":
-    train = train("../../fashiondata/img", epochs=1, batch_size=100, vec_shape=100)
-    train.trainer()
+	train = train("../../fashiondata/img", epochs=1, batch_size=100, vec_shape=100)
+	train.trainer()
 
