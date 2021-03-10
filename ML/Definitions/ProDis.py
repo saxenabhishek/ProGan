@@ -1,7 +1,12 @@
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
-from Definitions.layers import pixelNorm
+
+import sys
+
+sys.path.append("./ML/Definitions/")
+
+from layers import pixelNorm
 
 
 class ProDis(nn.Module):
