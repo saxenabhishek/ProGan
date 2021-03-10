@@ -2,6 +2,11 @@ import torch.nn as nn
 import torch
 import torch.nn.functional as F
 
+import sys
+sys.path.append("./ML/Definitions/")
+
+from layers import pixelNorm
+
 
 class ProGen(nn.Module):
     def __init__(self, layer_dept=5, Uper_feat_Exp=9):
@@ -13,15 +18,13 @@ class ProGen(nn.Module):
         self.fc = nn.Linear(self.max_filter, self.max_filter)
         self.first_layer = nn.Sequential(
             nn.Conv2d(self.max_filter, self.max_filter, 4, 1, 3),
-            nn.BatchNorm2d(self.max_filter),
             nn.LeakyReLU(0.2),
             nn.Conv2d(self.max_filter, self.max_filter, 3, 1, 1),
-            nn.BatchNorm2d(self.max_filter),
+            pixelNorm(),
             nn.LeakyReLU(0.2),
-            # nn.LocalResponseNorm(self.max_filter, alpha=1, beta=0.5, k=1e-8),
         )
 
-        self.gen_blocks = nn.ModuleList(
+        self.blocks = nn.ModuleList(
             [
                 self.block(2 ** (self.Uper_feat_Exp - i), 2 ** (self.Uper_feat_Exp - i - 1))
                 for i in range(self.layer_depth)
@@ -39,10 +42,10 @@ class ProGen(nn.Module):
         return nn.Sequential(
             nn.UpsamplingNearest2d(scale_factor=2),
             nn.Conv2d(in_ch, out_ch, 3, 1, 1),
-            nn.BatchNorm2d(out_ch),
+            pixelNorm(),
             nn.LeakyReLU(0.2),
             nn.Conv2d(out_ch, out_ch, 3, 1, 1),
-            nn.BatchNorm2d(out_ch),
+            pixelNorm(),
             nn.LeakyReLU(0.2),
         )
 
@@ -56,7 +59,7 @@ class ProGen(nn.Module):
 
         for i in range(depth):
             before_x = x
-            x = self.gen_blocks[i](before_x)
+            x = self.blocks[i](before_x)
 
         x = self.last_layer[depth](x)
 

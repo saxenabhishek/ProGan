@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
+from Definitions.layers import pixelNorm
 
 
 class ProDis(nn.Module):
@@ -14,7 +15,7 @@ class ProDis(nn.Module):
             [self.fromrgb(2 ** (self.Uper_feat_Exp - i)) for i in range(self.layer_depth + 1)]
         )
 
-        self.gen_blocks = nn.ModuleList(
+        self.blocks = nn.ModuleList(
             [
                 self.block(2 ** (self.Uper_feat_Exp - i - 1), 2 ** (self.Uper_feat_Exp - i))
                 for i in range(self.layer_depth)
@@ -23,7 +24,7 @@ class ProDis(nn.Module):
 
         self.last_layer = nn.Sequential(
             nn.Conv2d(self.max_filter + 1, self.max_filter, 3, 1, 1),
-            nn.BatchNorm2d(self.max_filter),
+            pixelNorm(),
             nn.LeakyReLU(0.2),
             nn.Conv2d(self.max_filter, self.max_filter, 4, 1),
             nn.LeakyReLU(0.2),
@@ -37,10 +38,10 @@ class ProDis(nn.Module):
     def block(self, in_ch, out_ch):
         return nn.Sequential(
             nn.Conv2d(in_ch, out_ch, 3, 1, 1),
-            nn.BatchNorm2d(out_ch),
+            pixelNorm(),
             nn.LeakyReLU(0.2),
             nn.Conv2d(out_ch, out_ch, 3, 1, 1),
-            nn.BatchNorm2d(out_ch),
+            pixelNorm(),
             nn.LeakyReLU(0.2),
             nn.AvgPool2d(2),
         )
@@ -67,7 +68,7 @@ class ProDis(nn.Module):
         x = F.leaky_relu(x, 0.2)
 
         if depth != 0:
-            x = self.gen_blocks[depth - 1](x)
+            x = self.blocks[depth - 1](x)
             if alpha != 1:
                 after_x = F.avg_pool2d(after_x, 2)
                 after_x = self.first_layer[depth - 1](after_x)
@@ -75,7 +76,7 @@ class ProDis(nn.Module):
                 x = (1 - alpha) * after_x + alpha * x
 
         for j in range(depth - 2, -1, -1):
-            x = self.gen_blocks[j](x)
+            x = self.blocks[j](x)
 
         # print(x.shape)
         x = self.miniBatchSTD(x)
@@ -89,4 +90,4 @@ if __name__ == "__main__":
     d = ProDis()
     out = d(torch.rand(12, 3, 128, 128), 5)
 
-    print(out)
+    print(out.shape)
