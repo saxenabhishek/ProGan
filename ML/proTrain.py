@@ -26,20 +26,27 @@ from time import time
 
 class train:
     def __init__(
-        self, path, batch_size, split, savedir="ModelWeights", merge_samples_Const=1, loadmodel=False, lr=[0.003, 0.001]
+        self,
+        path,
+        batch_size,
+        split,
+        savedir="ModelWeights",
+        merge_samples_Const=1,
+        loadmodel=False,
+        lr=[0.0001, 0.0001],
     ):
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         # self.device = "cpu"
-        self.gen = ProGen().to(self.device)
+        self.gen = ProGen(tanh=True).to(self.device)
         self.disc = ProDis().to(self.device)
         self.continuetraining = loadmodel
         # self.resnet = ResNetEncoder(vec_shape=vec_shape).to(self.device)
         # self.epochs = epochs
         # self.display_step = display_step
         self.root = savedir + "/"
-        self.criterion = nn.MSELoss()
-        beta1 = 0.5
+        self.criterion = nn.BCEWithLogitsLoss()
+        beta1 = 0.0
         self.batch_size = batch_size
 
         self.currentSize = (4, 4)
@@ -104,7 +111,7 @@ class train:
                 realdiscloss = self.criterion(discrealout, torch.ones_like(discrealout))
                 fakediscloss = self.criterion(discfakeout, torch.zeros_like(discfakeout))
 
-                totaldiscloss = (realdiscloss + fakediscloss) / 2
+                totaldiscloss = realdiscloss + fakediscloss
                 totaldiscloss.backward()
 
                 mean_discriminator_loss += totaldiscloss.item()
@@ -192,10 +199,10 @@ class train:
 
 
 if __name__ == "__main__":
-    gan = train("./Data", 5, [1, 200, 0], "./ModelWeights",)
+    gan = train("./Data_small", 6, [1, 200, 0], "./ModelWeights", lr=[0.003, 0.001], merge_samples_Const=2)
     gan.step_up()
-    gan.trainer(1, 100)
-    gan.step_dn()
-    gan.trainer(20, 100)
+    gan.trainer(8, 1)
+    gan.step_up()
+    gan.trainer(8, 50)
     gan.plot_trainer()
 
