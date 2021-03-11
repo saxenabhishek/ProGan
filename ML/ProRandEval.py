@@ -6,12 +6,12 @@ import sys
 
 sys.path.append("./ML")
 
-import Definitions.ProGen as model
+import Definitions.proGen as model
 
 
-def main(imgpath="Data", Genpath="C:/Users/as712/Downloads/Gen (8).pt", numrows=10, step=5, d=1):
+def main(imgpath="Data", Genpath="ModelWeights/Gen.pt", numrows=3, step=4, d=1):
     print("Test : Walking in latent sapce")
-    netG = model.ProGen()
+    netG = model.ProGen(tanh=True)
     netG.load_state_dict(torch.load(Genpath))
     print("     * Weights Loaded   ")
     # netG.eval()

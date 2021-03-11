@@ -6,7 +6,7 @@ import sys
 
 sys.path.append("./ML/Definitions/")
 
-from layers import pixelNorm
+from layers import pixelNorm, EqConv2d, EqLinear
 
 
 class ProGen(nn.Module):
@@ -17,11 +17,11 @@ class ProGen(nn.Module):
         self.max_filter = 2 ** self.Uper_feat_Exp
         self.tanh = tanh
 
-        self.fc = nn.Linear(self.max_filter, self.max_filter)
+        self.fc = EqLinear(self.max_filter, self.max_filter)
         self.first_layer = nn.Sequential(
-            nn.Conv2d(self.max_filter, self.max_filter, 4, 1, 3),
+            nn.Conv2d(self.max_filter, self.max_filter, 4, 1, 3,),
             nn.LeakyReLU(0.2),
-            nn.Conv2d(self.max_filter, self.max_filter, 3, 1, 1),
+            EqConv2d(self.max_filter, self.max_filter, 3, 1, 1),
             pixelNorm(),
             nn.LeakyReLU(0.2),
         )
@@ -38,15 +38,15 @@ class ProGen(nn.Module):
         )
 
     def torgb(self, maps):
-        return nn.Conv2d(maps, 3, 1)
+        return EqConv2d(maps, 3, 1)
 
     def block(self, in_ch, out_ch):
         return nn.Sequential(
             nn.UpsamplingNearest2d(scale_factor=2),
-            nn.Conv2d(in_ch, out_ch, 3, 1, 1),
+            EqConv2d(in_ch, out_ch, 3, 1, 1),
             pixelNorm(),
             nn.LeakyReLU(0.2),
-            nn.Conv2d(out_ch, out_ch, 3, 1, 1),
+            EqConv2d(out_ch, out_ch, 3, 1, 1),
             pixelNorm(),
             nn.LeakyReLU(0.2),
         )
@@ -77,6 +77,6 @@ class ProGen(nn.Module):
 
 if __name__ == "__main__":
     g = ProGen(layer_dept=4, Uper_feat_Exp=9)
-    print(g)
+    # print(g)
     out = g(torch.rand(1, 512), 4, 0.5)
     print(out.shape)
