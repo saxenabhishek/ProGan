@@ -45,7 +45,7 @@ class train:
         # self.epochs = epochs
         # self.display_step = display_step
         self.root = savedir + "/"
-        self.criterion = nn.BCEWithLogitsLoss()
+        self.criterion = nn.MSELoss()
         beta1 = 0.0
         self.batch_size = batch_size
 
@@ -108,10 +108,10 @@ class train:
                     self.gen(noise, self.currentLayerDepth, self.alpha).detach(), self.currentLayerDepth, self.alpha
                 )
 
-                realdiscloss = self.criterion(discrealout, torch.ones_like(discrealout))
-                fakediscloss = self.criterion(discfakeout, torch.zeros_like(discfakeout))
+                realdiscloss = self.criterion(discrealout, torch.ones_like(discrealout) * 0.9)
+                fakediscloss = self.criterion(discfakeout, torch.ones_like(discfakeout) * 0.1)
 
-                totaldiscloss = realdiscloss + fakediscloss
+                totaldiscloss = (realdiscloss + fakediscloss) / 2
                 totaldiscloss.backward()
 
                 mean_discriminator_loss += totaldiscloss.item()
@@ -124,7 +124,7 @@ class train:
                 genout = self.disc(
                     self.gen(noise, self.currentLayerDepth, self.alpha), self.currentLayerDepth, self.alpha
                 )
-                genoutloss = self.criterion(genout, torch.ones_like(genout))
+                genoutloss = self.criterion(genout, torch.ones_like(genout) * 0.9)
 
                 genoutloss.backward()
                 mean_generator_loss += genoutloss.item()
@@ -199,10 +199,12 @@ class train:
 
 
 if __name__ == "__main__":
-    gan = train("./Data_small", 6, [1, 200, 0], "./ModelWeights", lr=[0.003, 0.001], merge_samples_Const=2)
-    gan.step_up()
-    gan.trainer(8, 1)
+    gan = train("./Data", 6, [1, 200, 0], "./ModelWeights", lr=[0.001, 0.001], merge_samples_Const=3)
+    # gan.step_up()
+    gan.trainer(5, 50)
     gan.step_up()
     gan.trainer(8, 50)
+    gan.step_up()
+    gan.trainer(3, 50)
     gan.plot_trainer()
 
