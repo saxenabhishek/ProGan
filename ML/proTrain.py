@@ -15,8 +15,8 @@ sys.path.append("./ML")
 
 from Definitions.dataset import Data
 import math
-from Definitions.ProGen import ProGen
-from Definitions.ProDis import ProDis
+from Definitions.proGen import ProGen
+from Definitions.proDis import ProDis
 
 from torchvision.utils import make_grid
 from tqdm.auto import tqdm
