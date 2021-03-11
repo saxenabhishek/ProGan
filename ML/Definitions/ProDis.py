@@ -6,7 +6,7 @@ import sys
 
 sys.path.append("./ML/Definitions/")
 
-from layers import pixelNorm
+from layers import pixelNorm, EqConv2d, EqLinear
 
 
 class ProDis(nn.Module):
@@ -28,24 +28,24 @@ class ProDis(nn.Module):
         )
 
         self.last_layer = nn.Sequential(
-            nn.Conv2d(self.max_filter + 1, self.max_filter, 3, 1, 1),
+            EqConv2d(self.max_filter + 1, self.max_filter, 3, 1, 1),
             pixelNorm(),
             nn.LeakyReLU(0.2),
-            nn.Conv2d(self.max_filter, self.max_filter, 4, 1),
+            EqConv2d(self.max_filter, self.max_filter, 4, 1),
             nn.LeakyReLU(0.2),
         )
 
-        self.fc = nn.Linear(self.max_filter, 1)
+        self.fc = EqLinear(self.max_filter, 1)
 
     def fromrgb(self, maps):
-        return nn.Conv2d(3, maps, 1)
+        return EqConv2d(3, maps, 1)
 
     def block(self, in_ch, out_ch):
         return nn.Sequential(
-            nn.Conv2d(in_ch, out_ch, 3, 1, 1),
+            EqConv2d(in_ch, out_ch, 3, 1, 1),
             pixelNorm(),
             nn.LeakyReLU(0.2),
-            nn.Conv2d(out_ch, out_ch, 3, 1, 1),
+            EqConv2d(out_ch, out_ch, 3, 1, 1),
             pixelNorm(),
             nn.LeakyReLU(0.2),
             nn.AvgPool2d(2),
@@ -57,9 +57,6 @@ class ProDis(nn.Module):
         std = torch.std(x, 0)
         # average of that
         avg = torch.mean(std)
-
-        # if torch.isnan(avg):
-        #     avg = torch.tensor([1e-3])
 
         expanded = avg.expand_as(x[:, :1])
         return torch.cat([x, expanded], 1)
@@ -83,9 +80,7 @@ class ProDis(nn.Module):
         for j in range(depth - 2, -1, -1):
             x = self.blocks[j](x)
 
-        # print(x.shape)
         x = self.miniBatchSTD(x)
-        # print("something is", any(torch.isnan(x).flatten()))
         x = self.last_layer(x).squeeze()
         x = self.fc(x)
         return x
