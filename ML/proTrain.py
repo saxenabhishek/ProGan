@@ -17,6 +17,7 @@ from Definitions.dataset import Data
 import math
 from Definitions.proGen import ProGen
 from Definitions.proDis import ProDis
+from Definitions.loss import LSGAN, WGANGP
 
 from torchvision.utils import make_grid
 from tqdm.auto import tqdm
@@ -97,7 +98,8 @@ class train:
 
                 real_image = (1 - self.alpha) * imageS2 + self.alpha * imageS1
 
-                noise = torch.randn(self.batch_size, 512).to(self.device)
+                batch_size = real_image.shape[0]
+                noise = torch.randn(batch_size, 512).to(self.device)
 
                 self.discopt.zero_grad()
 
@@ -198,12 +200,12 @@ class train:
 
 
 if __name__ == "__main__":
-    gan = train("./Data", 6, [1, 200, 0], "./ModelWeights", lr=[0.001, 0.001], merge_samples_Const=3)
+    gan = train("./Data", 6, [1, 200, 0], "./ModelWeights", lr=[0.0003, 0.0001], merge_samples_Const=10)
     # gan.step_up()
     gan.trainer(5, 50)
     gan.step_up()
-    gan.trainer(8, 50)
-    gan.step_up()
-    gan.trainer(3, 50)
+    gan.trainer(5, 50)
+    # gan.step_up()
+    # gan.trainer(3, 50)
     gan.plot_trainer()
 
