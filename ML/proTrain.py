@@ -41,11 +41,10 @@ class train:
         self.gen = ProGen(tanh=True).to(self.device)
         self.disc = ProDis().to(self.device)
         self.continuetraining = loadmodel
-        # self.resnet = ResNetEncoder(vec_shape=vec_shape).to(self.device)
-        # self.epochs = epochs
-        # self.display_step = display_step
+
         self.root = savedir + "/"
-        self.criterion = nn.MSELoss()
+
+        self.loss = WGANGP()
         beta1 = 0.0
         self.batch_size = batch_size
 
@@ -104,17 +103,21 @@ class train:
 
                 discrealout = self.disc(real_image, self.currentLayerDepth, self.alpha)
 
-                discfakeout = self.disc(
-                    self.gen(noise, self.currentLayerDepth, self.alpha).detach(), self.currentLayerDepth, self.alpha
+                fake_image = self.gen(noise, self.currentLayerDepth, self.alpha).detach()
+                discfakeout = self.disc(fake_image, self.currentLayerDepth, self.alpha)
+
+                self.discLosses.append(
+                    self.loss.disLoss(
+                        discrealout,
+                        discfakeout,
+                        real=real_image,
+                        fake=fake_image,
+                        disc=self.disc,
+                        depth=self.currentLayerDepth,
+                        a=self.alpha,
+                    )
                 )
-
-                realdiscloss = self.criterion(discrealout, torch.ones_like(discrealout) * 0.9)
-                fakediscloss = self.criterion(discfakeout, torch.ones_like(discfakeout) * 0.1)
-
-                totaldiscloss = (realdiscloss + fakediscloss) / 2
-                totaldiscloss.backward()
-
-                mean_discriminator_loss += totaldiscloss.item()
+                mean_discriminator_loss += self.discLosses[-1]
                 self.discopt.step()
 
                 ##trianing generator
@@ -124,15 +127,11 @@ class train:
                 genout = self.disc(
                     self.gen(noise, self.currentLayerDepth, self.alpha), self.currentLayerDepth, self.alpha
                 )
-                genoutloss = self.criterion(genout, torch.ones_like(genout) * 0.9)
-
-                genoutloss.backward()
-                mean_generator_loss += genoutloss.item()
+                self.genLosses.append(self.loss.genloss(genout))
+                mean_generator_loss += self.genLosses[-1]
                 self.genopt.step()
 
-                self.discLosses.append(totaldiscloss.item())
-                self.genLosses.append(genoutloss.item())
-                # print(cur_step)
+                # Evaluation
                 if cur_step % display_step == 0 and cur_step > 0:
                     print(
                         f"[{epoch}] Step {cur_step}: Generator loss: {mean_generator_loss /display_step}, \t discriminator loss: {mean_discriminator_loss/display_step}  a:{self.alpha}"
