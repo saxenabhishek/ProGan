@@ -125,6 +125,7 @@ class train:
                 ##trianing generator
 
                 self.genopt.zero_grad()
+                self.discopt.zero_grad()
 
                 genout = self.disc(
                     self.gen(noise, self.currentLayerDepth, self.alpha), self.currentLayerDepth, self.alpha
