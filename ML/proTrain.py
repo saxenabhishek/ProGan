@@ -212,9 +212,10 @@ class train:
             torch.nn.init.constant_(m.bias, 0)
 
     def plot_trainer(self):
-        assert len(self.discLosses) != 0 and len(self.genLosses) != 0
-        plt.plot(self.discLosses, label="Discriminator Loss")
-        plt.plot(self.genLosses, label="Generator Loss")
+        # fix this assertion
+        # assert len(self.discLosses) != 0 and len(self.genLosses) != 0
+        for i in self.losses:
+            plt.plot(self.losses[i], label=i)
         plt.legend()
         plt.show()
 
