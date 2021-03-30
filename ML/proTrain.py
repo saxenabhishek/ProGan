@@ -39,8 +39,8 @@ class train:
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         # self.device = "cpu"
-        self.gen = ProGen(tanh=True).to(self.device)
-        self.disc = ProDis().to(self.device)
+        self.gen = ProGen(tanh=False)
+        self.disc = ProDis()
         self.continuetraining = loadmodel
 
         self.root = savedir + "/"
@@ -78,6 +78,9 @@ class train:
         self.gen.train()
         self.disc.train()
 
+        self.gen = self.gen.to(self.device)
+        self.disc = self.disc.to(self.device)
+
         cur_step = 0
         mean_discriminator_loss = 0
         mean_generator_loss = 0
@@ -87,6 +90,8 @@ class train:
             print("training")
             for batch in tqdm(self.trainloader):
                 ## training disc
+
+                torch.cuda.empty_cache()
 
                 imageS1 = batch["S1"].to(self.device)
                 imageS2 = F.interpolate(batch["S2"], scale_factor=2).to(self.device)
@@ -102,6 +107,7 @@ class train:
                 noise = torch.randn(batch_size, 512).to(self.device)
 
                 self.discopt.zero_grad()
+                self.genopt.zero_grad()
 
                 discrealout = self.disc(real_image, self.currentLayerDepth, self.alpha)
 
@@ -126,6 +132,8 @@ class train:
 
                 self.genopt.zero_grad()
                 self.discopt.zero_grad()
+
+                noise = torch.randn(batch_size, 512).to(self.device)
 
                 genout = self.disc(
                     self.gen(noise, self.currentLayerDepth, self.alpha), self.currentLayerDepth, self.alpha
