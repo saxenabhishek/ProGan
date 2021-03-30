@@ -175,12 +175,14 @@ class train:
         self.trainloader.dataset.dataset.s2 = self.previousSize
         self.alpha = 0
 
-    def show_tensor_images(self, image_tensor, num_images=64, size=(3, 64, 64)):
+    def show_tensor_images(self, image_tensor):
 
         image_tensor = (image_tensor + 1) / 2
         image_unflat = image_tensor.detach().cpu()
         plt.figure(figsize=(5, 5))
-        image_grid = make_grid(image_unflat[:num_images], nrow=int(math.sqrt(image_tensor.shape[0])))
+        numImgs = image_tensor.shape[0]
+        edgeNum = int(numImgs / int(math.sqrt(numImgs)))
+        image_grid = make_grid(image_unflat, nrow=edgeNum)
         plt.imshow(image_grid.permute(1, 2, 0).squeeze())
         plt.axis(False)
         plt.show()
