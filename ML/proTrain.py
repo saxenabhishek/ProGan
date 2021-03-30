@@ -221,12 +221,17 @@ class train:
 
 
 if __name__ == "__main__":
-    gan = train("./Data", 6, [1, 200, 0], "./ModelWeights", lr=[0.0003, 0.0001], merge_samples_Const=10)
-    # gan.step_up()
-    gan.trainer(5, 50)
-    gan.step_up()
-    gan.trainer(5, 50)
-    # gan.step_up()
-    # gan.trainer(3, 50)
-    gan.plot_trainer()
+    st = time()
+    gan = train(
+        "Data",
+        16,
+        [20, 80, 0],
+        "D:\Projects\ProGan\ModelWeights",
+        lr=[0.001, 0.001],
+        merge_samples_Const=20,
+        loadmodel=False,
+    )
+    gan.trainer(20, 50)
+
+    print(time() - st)
 
