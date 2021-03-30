@@ -70,8 +70,12 @@ class train:
             self.gen.load_state_dict(torch.load(self.root + "Gen.pt"))  ## path  generator
             self.disc.load_state_dict(torch.load(self.root + "Dis.pt"))  ## path
 
-        self.discLosses = []
-        self.genLosses = []
+        self.losses = {
+            "disc": [],
+            "gen": [],
+            "probReal": [],
+            "probFake": [],
+        }
 
     def trainer(self, epochs, display_step):
 
@@ -82,8 +86,7 @@ class train:
         self.disc = self.disc.to(self.device)
 
         cur_step = 0
-        mean_discriminator_loss = 0
-        mean_generator_loss = 0
+
         test_noise = torch.randn(self.batch_size, 512).to(self.device)
 
         for epoch in range(epochs):
@@ -114,7 +117,10 @@ class train:
                 fake_image = self.gen(noise, self.currentLayerDepth, self.alpha).detach()
                 discfakeout = self.disc(fake_image, self.currentLayerDepth, self.alpha)
 
-                self.discLosses.append(
+                self.losses["probReal"].append(discrealout[:, 0].mean().item())
+                self.losses["probFake"].append(discfakeout[:, 0].mean().item())
+
+                self.losses["disc"].append(
                     self.loss.disLoss(
                         discrealout,
                         discfakeout,
@@ -125,7 +131,6 @@ class train:
                         a=self.alpha,
                     )
                 )
-                mean_discriminator_loss += self.discLosses[-1]
                 self.discopt.step()
 
                 ##trianing generator
@@ -138,26 +143,30 @@ class train:
                 genout = self.disc(
                     self.gen(noise, self.currentLayerDepth, self.alpha), self.currentLayerDepth, self.alpha
                 )
-                self.genLosses.append(self.loss.genloss(genout))
-                mean_generator_loss += self.genLosses[-1]
+                self.losses["gen"].append(self.loss.genloss(genout))
                 self.genopt.step()
 
                 # Evaluation
                 if cur_step % display_step == 0 and cur_step > 0:
-                    print(
-                        f"[{epoch}] Step {cur_step}: Generator loss: {mean_generator_loss /display_step}, \t discriminator loss: {mean_discriminator_loss/display_step}  a:{self.alpha}"
-                    )
+                    print(" ")
+                    print(f"\n ep{epoch} | ")
+                    for i in self.losses:
+                        print(f" {i} : {self.movingAverage(i,display_step)}", end=" ")
+                    print(" ")
+
                     fake = self.gen(test_noise, self.currentLayerDepth, self.alpha)
                     self.show_tensor_images(torch.cat((fake, real_image), 0))
 
-                    mean_generator_loss = 0
-                    mean_discriminator_loss = 0
                 cur_step += 1
 
             print("Saving weights")
 
             torch.save(self.gen.state_dict(), self.root + "Gen.pt")
             torch.save(self.disc.state_dict(), self.root + "Dis.pt")
+
+    def movingAverage(self, lossname: str, stepSize: int):
+        vals = self.losses[lossname][-stepSize:]
+        return sum(vals) / len(vals)
 
     def step_up(self):
         self.currentLayerDepth += 1
