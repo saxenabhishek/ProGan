@@ -39,8 +39,8 @@ class train:
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         # self.device = "cpu"
-        self.gen = ProGen(tanh=True).to(self.device)
-        self.disc = ProDis().to(self.device)
+        self.gen = ProGen(tanh=False)
+        self.disc = ProDis()
         self.continuetraining = loadmodel
 
         self.root = savedir + "/"
@@ -70,23 +70,31 @@ class train:
             self.gen.load_state_dict(torch.load(self.root + "Gen.pt"))  ## path  generator
             self.disc.load_state_dict(torch.load(self.root + "Dis.pt"))  ## path
 
-        self.discLosses = []
-        self.genLosses = []
+        self.losses = {
+            "disc": [],
+            "gen": [],
+            "probReal": [],
+            "probFake": [],
+        }
 
     def trainer(self, epochs, display_step):
 
         self.gen.train()
         self.disc.train()
 
+        self.gen = self.gen.to(self.device)
+        self.disc = self.disc.to(self.device)
+
         cur_step = 0
-        mean_discriminator_loss = 0
-        mean_generator_loss = 0
+
         test_noise = torch.randn(self.batch_size, 512).to(self.device)
 
         for epoch in range(epochs):
             print("training")
             for batch in tqdm(self.trainloader):
                 ## training disc
+
+                torch.cuda.empty_cache()
 
                 imageS1 = batch["S1"].to(self.device)
                 imageS2 = F.interpolate(batch["S2"], scale_factor=2).to(self.device)
@@ -102,13 +110,17 @@ class train:
                 noise = torch.randn(batch_size, 512).to(self.device)
 
                 self.discopt.zero_grad()
+                self.genopt.zero_grad()
 
                 discrealout = self.disc(real_image, self.currentLayerDepth, self.alpha)
 
                 fake_image = self.gen(noise, self.currentLayerDepth, self.alpha).detach()
                 discfakeout = self.disc(fake_image, self.currentLayerDepth, self.alpha)
 
-                self.discLosses.append(
+                self.losses["probReal"].append(discrealout[:, 0].mean().item())
+                self.losses["probFake"].append(discfakeout[:, 0].mean().item())
+
+                self.losses["disc"].append(
                     self.loss.disLoss(
                         discrealout,
                         discfakeout,
@@ -119,36 +131,42 @@ class train:
                         a=self.alpha,
                     )
                 )
-                mean_discriminator_loss += self.discLosses[-1]
                 self.discopt.step()
 
                 ##trianing generator
 
                 self.genopt.zero_grad()
+                self.discopt.zero_grad()
+
+                noise = torch.randn(batch_size, 512).to(self.device)
 
                 genout = self.disc(
                     self.gen(noise, self.currentLayerDepth, self.alpha), self.currentLayerDepth, self.alpha
                 )
-                self.genLosses.append(self.loss.genloss(genout))
-                mean_generator_loss += self.genLosses[-1]
+                self.losses["gen"].append(self.loss.genloss(genout))
                 self.genopt.step()
 
                 # Evaluation
                 if cur_step % display_step == 0 and cur_step > 0:
-                    print(
-                        f"[{epoch}] Step {cur_step}: Generator loss: {mean_generator_loss /display_step}, \t discriminator loss: {mean_discriminator_loss/display_step}  a:{self.alpha}"
-                    )
+                    print(" ")
+                    print(f"\n ep{epoch} | ")
+                    for i in self.losses:
+                        print(f" {i} : {self.movingAverage(i,display_step)}", end=" ")
+                    print(" ")
+
                     fake = self.gen(test_noise, self.currentLayerDepth, self.alpha)
                     self.show_tensor_images(torch.cat((fake, real_image), 0))
 
-                    mean_generator_loss = 0
-                    mean_discriminator_loss = 0
                 cur_step += 1
 
             print("Saving weights")
 
             torch.save(self.gen.state_dict(), self.root + "Gen.pt")
             torch.save(self.disc.state_dict(), self.root + "Dis.pt")
+
+    def movingAverage(self, lossname: str, stepSize: int):
+        vals = self.losses[lossname][-stepSize:]
+        return sum(vals) / len(vals)
 
     def step_up(self):
         self.currentLayerDepth += 1
@@ -174,12 +192,14 @@ class train:
         self.trainloader.dataset.dataset.s2 = self.previousSize
         self.alpha = 0
 
-    def show_tensor_images(self, image_tensor, num_images=64, size=(3, 64, 64)):
+    def show_tensor_images(self, image_tensor):
 
         image_tensor = (image_tensor + 1) / 2
         image_unflat = image_tensor.detach().cpu()
         plt.figure(figsize=(5, 5))
-        image_grid = make_grid(image_unflat[:num_images], nrow=int(math.sqrt(image_tensor.shape[0])))
+        numImgs = image_tensor.shape[0]
+        edgeNum = int(numImgs / int(math.sqrt(numImgs)))
+        image_grid = make_grid(image_unflat, nrow=edgeNum)
         plt.imshow(image_grid.permute(1, 2, 0).squeeze())
         plt.axis(False)
         plt.show()
@@ -192,20 +212,26 @@ class train:
             torch.nn.init.constant_(m.bias, 0)
 
     def plot_trainer(self):
-        assert len(self.discLosses) != 0 and len(self.genLosses) != 0
-        plt.plot(self.discLosses, label="Discriminator Loss")
-        plt.plot(self.genLosses, label="Generator Loss")
+        # fix this assertion
+        # assert len(self.discLosses) != 0 and len(self.genLosses) != 0
+        for i in self.losses:
+            plt.plot(self.losses[i], label=i)
         plt.legend()
         plt.show()
 
 
 if __name__ == "__main__":
-    gan = train("./Data", 6, [1, 200, 0], "./ModelWeights", lr=[0.0003, 0.0001], merge_samples_Const=10)
-    # gan.step_up()
-    gan.trainer(5, 50)
-    gan.step_up()
-    gan.trainer(5, 50)
-    # gan.step_up()
-    # gan.trainer(3, 50)
-    gan.plot_trainer()
+    st = time()
+    gan = train(
+        "Data",
+        16,
+        [20, 80, 0],
+        "D:\Projects\ProGan\ModelWeights",
+        lr=[0.001, 0.001],
+        merge_samples_Const=20,
+        loadmodel=False,
+    )
+    gan.trainer(20, 50)
+
+    print(time() - st)
 

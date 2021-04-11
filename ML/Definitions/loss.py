@@ -35,7 +35,7 @@ class WGANGP:
         fake = kwarg["fake"]
 
         crit = dfake[:, 0].sum() - dreal[:, 0].sum()
-        crit.backward(retain_graph=True)
+        crit.backward()
 
         batchSize = real.size(0)
         alpha = torch.rand(batchSize, 1)
@@ -56,13 +56,13 @@ class WGANGP:
         gradients = (gradients * gradients).sum(dim=1).sqrt()
         gradient_penalty = (((gradients - 1.0) ** 2)).sum() * self.weight
 
-        gradient_penalty.backward(retain_graph=True)
+        gradient_penalty.backward()
 
         return gradient_penalty.item() + crit.item()
 
     def genloss(self, genout):
         crit = -genout[:, 0].sum()
-        crit.backward(retain_graph=True)
+        crit.backward()
         return crit.item()
 
 
