@@ -97,7 +97,7 @@ class train:
                 imageS2 = F.interpolate(batch["S2"], scale_factor=2).to(self.device)
 
                 if self.alpha < 1:
-                    self.alpha += self.alpha_unit_update
+                    self.alpha += self.alpha_speed
                 else:
                     self.alpha = 1
 
