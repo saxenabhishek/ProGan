@@ -37,6 +37,7 @@ class train:
         split: list,
         savedir: str = "ModelWeights/",
         imagedir: str = "ModelWeights/img",
+        maxLayerDepth: int = 4,
         merge_samples_Const: int = 1,
         lr: list = [0.0001, 0.0001],
         loadmodel: bool = False,
@@ -47,8 +48,8 @@ class train:
         # self.device = "cpu"
 
         print("Making models")
-        self.gen = ProGen(tanh=False).to(self.device)
-        self.disc = ProDis().to(self.device)
+        self.gen = ProGen(maxLayerDepth, tanh=False).to(self.device)
+        self.disc = ProDis(maxLayerDepth).to(self.device)
         self.test_noise = torch.randn(9, 512).to(self.device)
 
         print("Making optimizers")
@@ -267,7 +268,7 @@ if __name__ == "__main__":
         "D:\Projects\ProGan\ModelWeights",
         lr=[0.001, 0.001],
         merge_samples_Const=20,
-        loadmodel=True,
+        loadmodel=False,
         PlotInNotebook=False,
     )
     gan.trainer(20, 100)

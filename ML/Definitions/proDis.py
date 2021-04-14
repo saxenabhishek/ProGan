@@ -10,7 +10,7 @@ from layers import pixelNorm, EqConv2d, EqLinear
 
 
 class ProDis(nn.Module):
-    def __init__(self, layer_dept=5, Uper_feat_Exp=9):
+    def __init__(self, layer_dept: int = 5, Uper_feat_Exp: int = 9):
         super(ProDis, self).__init__()
         self.layer_depth = layer_dept
         self.Uper_feat_Exp = Uper_feat_Exp
