@@ -148,10 +148,10 @@ class train:
                 # Evaluation
                 if cur_step % display_step == 0 and cur_step > 0:
                     print(" ")
-                    print(f"\n ep{epoch} | ")
+                    print(f"\n ep{self.epNUM} | ")
                     for i in self.losses:
                         print(f" {i} : {self.movingAverage(i,display_step)}", end=" ")
-                    print(" ")
+                    print(f" Alpha : {self.alpha} ")
 
                     fake = self.gen(test_noise, self.currentLayerDepth, self.alpha)
                     self.show_tensor_images(torch.cat((fake, real_image), 0))
