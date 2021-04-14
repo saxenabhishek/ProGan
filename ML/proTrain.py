@@ -153,8 +153,8 @@ class train:
                         print(f" {i} : {self.movingAverage(i,display_step)}", end=" ")
                     print(f" Alpha : {self.alpha} ")
 
-                    fake = self.gen(test_noise, self.currentLayerDepth, self.alpha)
-                    self.show_tensor_images(torch.cat((fake, real_image), 0))
+                    fake = self.gen(self.test_noise, self.currentLayerDepth, self.alpha)
+                    self.show_tensor_images(torch.cat((fake, real_image[:9]), 0), cur_step)
 
                 cur_step += 1
 
@@ -200,7 +200,7 @@ class train:
     def setImageSize(self):
         self.trainloader.dataset.dataset.s1 = self.currentSize
         self.trainloader.dataset.dataset.s2 = self.previousSize
-        
+
     def step_up(self):
         self.currentLayerDepth += 1
 
@@ -221,30 +221,41 @@ class train:
         self.setImageSize()
         self.alpha = 0
 
-    def show_tensor_images(self, image_tensor):
-
+    def show_tensor_images(self, image_tensor, step: int):
         image_tensor = (image_tensor + 1) / 2
         image_unflat = image_tensor.detach().cpu()
-        plt.figure(figsize=(5, 5))
         numImgs = image_tensor.shape[0]
         edgeNum = int(numImgs / int(math.sqrt(numImgs)))
         image_grid = make_grid(image_unflat, nrow=edgeNum)
+        plt.title(str(self.epNUM) + "_" + str(self.currentLayerDepth) + "_" + str(self.alpha))
         plt.imshow(image_grid.permute(1, 2, 0).squeeze())
         plt.axis(False)
-        plt.show()
-
-    def weights_init(self, m):
-        if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
-            torch.nn.init.normal_(m.weight, 0.0, 0.02)
-        if isinstance(m, nn.BatchNorm2d):
-            torch.nn.init.normal_(m.weight, 0.0, 0.02)
-            torch.nn.init.constant_(m.bias, 0)
+        if self.PlotInNotebook:
+            plt.show()
+        else:
+            plt.savefig(self.rootimg + "/" + str(self.epNUM) + "_" + str(step) + ".png", bbox_inches="tight")
+            plt.clf()
 
     def plot_trainer(self):
         for i in self.losses:
-            plt.plot(self.losses[i], label=i)
+            if "prob" not in i:
+                plt.plot(self.losses[i], label=i)
         plt.legend()
-        plt.show()
+        if self.PlotInNotebook:
+            plt.show()
+        else:
+            plt.savefig(self.rootimg + "/" + "loss" + "_" + str(self.epNUM) + ".png")
+            plt.clf()
+
+        for i in self.losses:
+            if "prob" in i:
+                plt.plot(self.losses[i], label=i)
+        plt.legend()
+        if self.PlotInNotebook:
+            plt.show()
+        else:
+            plt.savefig(self.rootimg + "/" + "Prob" + "_" + str(self.epNUM) + ".png")
+            plt.clf()
 
 
 if __name__ == "__main__":
