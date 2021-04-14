@@ -58,17 +58,12 @@ class train:
         data = Data(path=path, batch_size=batch_size, size1=self.currentSize, size2=self.previousSize, num_workers=1)
         self.trainloader, self.testloader, _ = data.getdata(split=split)
 
-        self.alpha = 1
-        self.alpha_unit_update = 1 / len(self.trainloader) / merge_samples_Const
-        print(self.alpha_unit_update)
-
-        if self.continuetraining == False:
-            self.disc = self.disc.apply(self.weights_init)
-            self.gen = self.gen.apply(self.weights_init)
-        else:
-            print("laoding weights")
-            self.gen.load_state_dict(torch.load(self.root + "Gen.pt"))  ## path  generator
-            self.disc.load_state_dict(torch.load(self.root + "Dis.pt"))  ## path
+        self.alpha_speed = 1 / len(self.trainloader) / merge_samples_Const
+        self.root = savedir
+        self.rootimg = imagedir
+        self.continuetraining: bool = loadmodel
+        self.PlotInNotebook: bool = PlotInNotebook
+        self.batch_size = batch_size
 
         self.losses = {
             "disc": [],
@@ -77,13 +72,15 @@ class train:
             "probFake": [],
         }
 
-    def trainer(self, epochs, display_step):
+        if self.continuetraining:
+            print("loading weights")
+            self.loadValues()
+            self.setImageSize()
+
+    def trainer(self, epochs: int, display_step: int):
 
         self.gen.train()
         self.disc.train()
-
-        self.gen = self.gen.to(self.device)
-        self.disc = self.disc.to(self.device)
 
         cur_step = 0
 
@@ -160,6 +157,7 @@ class train:
                 cur_step += 1
 
             print("Saving weights")
+            self.save_weight()
 
             torch.save(self.gen.state_dict(), self.root + "Gen.pt")
             torch.save(self.disc.state_dict(), self.root + "Dis.pt")
@@ -168,16 +166,48 @@ class train:
         vals = self.losses[lossname][-stepSize:]
         return sum(vals) / len(vals)
 
+    def save_weight(self):
+        torch.save(
+            {
+                ":gen": self.gen.state_dict(),
+                ":disc": self.disc.state_dict(),
+                ":discopt": self.discopt.state_dict(),
+                ":genopt": self.genopt.state_dict(),
+                "epNUM": self.epNUM,
+                "alpha": self.alpha,
+                "alpha_speed": self.alpha_speed,
+                "currentSize": self.currentSize,
+                "previousSize": self.previousSize,
+                "currentLayerDepth": self.currentLayerDepth,
+                "losses": self.losses,
+            },
+            self.root + "/Parm_weig.tar",
+        )
+
+    def loadValues(self):
+        checkpoint = torch.load(self.root + "/Parm_weig.tar", map_location=self.device)
+        for i in checkpoint:
+            print("Loading ", i)
+            if ":" in i:
+                attr = i[1:]  # remove the ':'
+                getattr(self, attr).load_state_dict(checkpoint[i])
+            else:
+                if i != "losses":
+                    print(checkpoint[i])
+                setattr(self, i, checkpoint[i])
+
+    def setImageSize(self):
+        self.trainloader.dataset.dataset.s1 = self.currentSize
+        self.trainloader.dataset.dataset.s2 = self.previousSize
+        
     def step_up(self):
         self.currentLayerDepth += 1
 
         self.previousSize = self.currentSize
         self.currentSize = (self.currentSize[0] * 2,) * 2
 
-        print(self.previousSize, self.currentSize)
-
-        self.trainloader.dataset.dataset.s1 = self.currentSize
-        self.trainloader.dataset.dataset.s2 = self.previousSize
+        print("Increasing size", self.previousSize, self.currentSize)
+        self.setImageSize()
         self.alpha = 0
 
     def step_dn(self):
@@ -186,10 +216,8 @@ class train:
         self.currentSize = (self.currentSize[0] // 2,) * 2
         self.previousSize = (self.currentSize[0] // 2,) * 2
 
-        print(self.previousSize, self.currentSize)
-
-        self.trainloader.dataset.dataset.s1 = self.currentSize
-        self.trainloader.dataset.dataset.s2 = self.previousSize
+        print("Decreasing size", self.previousSize, self.currentSize)
+        self.setImageSize()
         self.alpha = 0
 
     def show_tensor_images(self, image_tensor):
