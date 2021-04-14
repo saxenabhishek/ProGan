@@ -93,9 +93,11 @@ class train:
 
                 torch.cuda.empty_cache()
 
+                # get images in 2 sizes
                 imageS1 = batch["S1"].to(self.device)
                 imageS2 = F.interpolate(batch["S2"], scale_factor=2).to(self.device)
 
+                # update value of alpha if neccesary.
                 if self.alpha < 1:
                     self.alpha += self.alpha_speed
                 else:
@@ -239,8 +241,6 @@ class train:
             torch.nn.init.constant_(m.bias, 0)
 
     def plot_trainer(self):
-        # fix this assertion
-        # assert len(self.discLosses) != 0 and len(self.genLosses) != 0
         for i in self.losses:
             plt.plot(self.losses[i], label=i)
         plt.legend()
