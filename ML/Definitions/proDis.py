@@ -53,7 +53,6 @@ class ProDis(nn.Module):
 
     def miniBatchSTD(self, x):
         # std deviation over differnt batches
-        x[x != x] = 0
         std = torch.std(x, 0)
         # average of that
         avg = torch.mean(std)
