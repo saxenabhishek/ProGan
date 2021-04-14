@@ -1,60 +1,62 @@
 """
-
 Training
-
 """
 
+import math
+import sys
+from time import time
+
 import torch
-import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-
-import sys
+from torchvision.utils import make_grid
 
 sys.path.append("./ML")
 
-from Definitions.dataset import Data
-import math
-from Definitions.proGen import ProGen
-from Definitions.proDis import ProDis
-from Definitions.loss import LSGAN, WGANGP
-
-from torchvision.utils import make_grid
-from tqdm.auto import tqdm
 import matplotlib.pyplot as plt
-from time import time
+from tqdm.auto import tqdm
+
+from Definitions.dataset import Data
+from Definitions.loss import WGANGP
+from Definitions.proDis import ProDis
+from Definitions.proGen import ProGen
 
 
 class train:
+    currentSize = (4, 4)
+    previousSize = (2, 2)
+    currentLayerDepth = 0
+    epNUM = 0
+    alpha = 1.0
+    loss = WGANGP()
+
     def __init__(
         self,
-        path,
-        batch_size,
-        split,
-        savedir="ModelWeights",
-        merge_samples_Const=1,
-        loadmodel=False,
-        lr=[0.0001, 0.0001],
+        path: str,
+        batch_size: int,
+        split: list,
+        savedir: str = "ModelWeights/",
+        imagedir: str = "ModelWeights/img",
+        merge_samples_Const: int = 1,
+        lr: list = [0.0001, 0.0001],
+        loadmodel: bool = False,
+        PlotInNotebook: bool = False,
     ):
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         # self.device = "cpu"
-        self.gen = ProGen(tanh=False)
-        self.disc = ProDis()
-        self.continuetraining = loadmodel
 
-        self.root = savedir + "/"
+        print("Making models")
+        self.gen = ProGen(tanh=False).to(self.device)
+        self.disc = ProDis().to(self.device)
+        self.test_noise = torch.randn(9, 512).to(self.device)
 
-        self.loss = WGANGP()
+        print("Making optimizers")
         beta1 = 0.0
-        self.batch_size = batch_size
-
-        self.currentSize = (4, 4)
-        self.previousSize = (2, 2)
-        self.currentLayerDepth = 0
-
         self.discopt = optim.Adam(self.disc.parameters(), lr=lr[1], betas=(beta1, 0.999))
         self.genopt = optim.Adam(self.gen.parameters(), lr=lr[0], betas=(beta1, 0.999))
+
+        print("Making Dataloader")
         data = Data(path=path, batch_size=batch_size, size1=self.currentSize, size2=self.previousSize, num_workers=1)
         self.trainloader, self.testloader, _ = data.getdata(split=split)
 
@@ -65,7 +67,7 @@ class train:
         self.PlotInNotebook: bool = PlotInNotebook
         self.batch_size = batch_size
 
-        self.losses = {
+        self.losses: dict = {
             "disc": [],
             "gen": [],
             "probReal": [],
@@ -83,8 +85,6 @@ class train:
         self.disc.train()
 
         cur_step = 0
-
-        test_noise = torch.randn(self.batch_size, 512).to(self.device)
 
         for epoch in range(epochs):
             print("training")
@@ -159,8 +159,7 @@ class train:
             print("Saving weights")
             self.save_weight()
 
-            torch.save(self.gen.state_dict(), self.root + "Gen.pt")
-            torch.save(self.disc.state_dict(), self.root + "Dis.pt")
+            self.epNUM += 1
 
     def movingAverage(self, lossname: str, stepSize: int):
         vals = self.losses[lossname][-stepSize:]
