@@ -48,10 +48,16 @@ class Data:
 
         train, test, val = random_split(self.folderdata, split, generator=torch.Generator().manual_seed(69),)
 
-        trainloader = DataLoader(train, shuffle=True, batch_size=self.batch_size, num_workers=self.num_workers,)
-        testloader = DataLoader(test, shuffle=True, batch_size=self.batch_size, num_workers=self.num_workers,)
+        trainloader = DataLoader(
+            train, shuffle=True, batch_size=self.batch_size, num_workers=self.num_workers, pin_memory=True
+        )
+        testloader = DataLoader(
+            test, shuffle=True, batch_size=self.batch_size, num_workers=self.num_workers, pin_memory=True
+        )
 
-        valloader = DataLoader(val, shuffle=True, batch_size=self.batch_size, num_workers=self.num_workers,)
+        valloader = DataLoader(
+            val, shuffle=True, batch_size=self.batch_size, num_workers=self.num_workers, pin_memory=True
+        )
 
         return trainloader, testloader, valloader
 
