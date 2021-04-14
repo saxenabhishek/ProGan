@@ -262,14 +262,14 @@ if __name__ == "__main__":
     st = time()
     gan = train(
         "Data",
-        16,
+        128,
         [20, 80, 0],
         "D:\Projects\ProGan\ModelWeights",
         lr=[0.001, 0.001],
         merge_samples_Const=20,
-        loadmodel=False,
+        loadmodel=True,
+        PlotInNotebook=False,
     )
-    gan.trainer(20, 50)
-
+    gan.trainer(20, 100)
     print(time() - st)
 
