@@ -17,12 +17,17 @@ class ProDis(nn.Module):
         self.max_filter = 2 ** self.Uper_feat_Exp
 
         self.first_layer = nn.ModuleList(
-            [self.fromrgb(2 ** (self.Uper_feat_Exp - i)) for i in range(self.layer_depth + 1)]
+            [
+                self.fromrgb(2 ** (self.Uper_feat_Exp - i + 4)) if i > 3 else self.fromrgb(2 ** (self.Uper_feat_Exp))
+                for i in range(self.layer_depth + 1)
+            ]
         )
 
         self.blocks = nn.ModuleList(
             [
-                self.block(2 ** (self.Uper_feat_Exp - i - 1), 2 ** (self.Uper_feat_Exp - i))
+                self.block(2 ** (self.Uper_feat_Exp - i - 1 + 4), 2 ** (self.Uper_feat_Exp - i + 4))
+                if i > 3
+                else self.block(2 ** (self.Uper_feat_Exp), 2 ** (self.Uper_feat_Exp))
                 for i in range(self.layer_depth)
             ]
         )
@@ -87,6 +92,6 @@ class ProDis(nn.Module):
 
 if __name__ == "__main__":
     d = ProDis()
+    print(d)
     out = d(torch.rand(12, 3, 128, 128), 5)
-
     print(out.shape)

@@ -24,8 +24,8 @@ class LSGAN:
 
 
 class WGANGP:
-    weight = 4
-    epsilonD = 0.002
+    weight = 10
+    epsilonD = 0.001
 
     def disLoss(self, dreal, dfake, **kwarg):
         D = kwarg["disc"]
