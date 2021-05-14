@@ -24,7 +24,7 @@ class LSGAN:
 
 
 class WGANGP:
-    weight = 10
+    weight = 5
     epsilonD = 0.001
 
     def disLoss(self, dreal, dfake, **kwarg):
@@ -62,12 +62,12 @@ class WGANGP:
 
         gradient_penalty.backward()
 
-        return gradient_penalty.item() + crit.item() + epsilonLoss.item()
+        return gradient_penalty.detach().item() + crit.detach().item() + epsilonLoss.detach().item()
 
     def genloss(self, genout):
         crit = -genout[:, 0].sum()
         crit.backward()
-        return crit.item()
+        return crit.detach().item()
 
 
 def main():
