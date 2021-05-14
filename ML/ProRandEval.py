@@ -1,5 +1,4 @@
 import torch
-from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 
 import sys
@@ -9,10 +8,14 @@ sys.path.append("./ML")
 import Definitions.proGen as model
 
 
-def main(imgpath="Data", Genpath="ModelWeights/Gen.pt", numrows=3, step=4, d=1):
+def main(Genpath="C:\\Users\\as712\\Downloads\\Gen (5).pt", numrows=3, step=4):
     print("Test : Walking in latent sapce")
-    netG = model.ProGen(tanh=True)
-    netG.load_state_dict(torch.load(Genpath))
+    netG = model.ProGen(4,tanh=True)
+    print("     * Model Made   ")
+    loads=torch.load(Genpath)
+    netG.load_state_dict(loads[":gen"])
+    d=loads["currentLayerDepth"]
+    a=loads["alpha"]
     print("     * Weights Loaded   ")
     # netG.eval()
 
@@ -28,7 +31,7 @@ def main(imgpath="Data", Genpath="ModelWeights/Gen.pt", numrows=3, step=4, d=1):
         z_all = torch.cat((inertia, z_all))
 
     print("     * Noise Created   ")
-    img = netG(z_all, depth=d).detach()
+    img = netG(z_all, depth=d, alpha = a).detach()
     _, ax = plt.subplots(numrows, step + 1, sharex=True, sharey=True)
     print("     * Images genarated    ")
     for i in range(numrows):
@@ -41,5 +44,5 @@ def main(imgpath="Data", Genpath="ModelWeights/Gen.pt", numrows=3, step=4, d=1):
 
 
 if __name__ == "__main__":
-    main()
+    main("ModelWeights\Parm_weig.tar", 5 ,5)
 
