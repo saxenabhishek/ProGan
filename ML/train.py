@@ -4,26 +4,33 @@ Training
 
 """
 
+import sys
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
 
-import sys
-
 sys.path.append("./ML")
 
-from Definitions.dataset import Data
-from Definitions.models import Generator, Discriminator, ResNetEncoder
+import matplotlib.pyplot as plt
 from torchvision.utils import make_grid
 from tqdm.auto import tqdm
-import matplotlib.pyplot as plt
-from time import time
+
+from Definitions.dataset import Data
+from Definitions.models import Discriminator, Generator, ResNetEncoder
 
 
 class train:
-
     def __init__(
-        self, path, epochs, batch_size, split, display_step=50, vec_shape=100, noisedim=100, savedir="ModelWeights"
+        self,
+        path,
+        epochs,
+        batch_size,
+        split=[20, 80, 0],
+        display_step=50,
+        vec_shape=100,
+        noisedim=100,
+        savedir="ModelWeights",
     ):
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -138,8 +145,9 @@ class train:
         plt.plot(self.genLosses, label="Generator Loss")
         plt.legend()
         plt.show()
-        
+
+
 if __name__ == "__main__":
-	train = train("../../fashiondata/img", epochs=1, batch_size=100, vec_shape=100)
-	train.trainer()
+    gan = train("../../fashiondata/img", epochs=1, batch_size=100, vec_shape=100)
+    gan.trainer()
 
