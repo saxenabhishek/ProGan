@@ -5,6 +5,7 @@ Training
 import math
 import sys
 from time import time
+import gc
 
 import torch
 import torch.optim as optim
@@ -93,6 +94,7 @@ class train:
                 ## training disc
 
                 torch.cuda.empty_cache()
+                gc.collect()
 
                 # get images in 2 sizes
                 imageS1 = batch["S1"].to(self.device)
@@ -117,8 +119,8 @@ class train:
                 fake_image = self.gen(noise, self.currentLayerDepth, self.alpha).detach()
                 discfakeout = self.disc(fake_image, self.currentLayerDepth, self.alpha)
 
-                self.losses["probReal"].append(discrealout[:, 0].mean().item())
-                self.losses["probFake"].append(discfakeout[:, 0].mean().item())
+                self.losses["probReal"].append(discrealout[:, 0].mean().detach().item())
+                self.losses["probFake"].append(discfakeout[:, 0].mean().detach().item())
 
                 self.losses["disc"].append(
                     self.loss.disLoss(
@@ -138,10 +140,10 @@ class train:
                 self.genopt.zero_grad()
                 self.discopt.zero_grad()
 
-                noise = torch.randn(batch_size, 512).to(self.device)
+                noise2 = torch.randn(batch_size, 512).to(self.device)
 
                 genout = self.disc(
-                    self.gen(noise, self.currentLayerDepth, self.alpha), self.currentLayerDepth, self.alpha
+                    self.gen(noise2, self.currentLayerDepth, self.alpha), self.currentLayerDepth, self.alpha
                 )
                 self.losses["gen"].append(self.loss.genloss(genout))
                 self.genopt.step()
@@ -154,15 +156,15 @@ class train:
                         print(f" {i} : {self.movingAverage(i,display_step)}", end=" ")
                     print(f" Alpha : {self.alpha} ")
 
-                    fake = self.gen(self.test_noise, self.currentLayerDepth, self.alpha)
-                    self.show_tensor_images(torch.cat((fake, real_image[:9]), 0), cur_step)
+                    with torch.no_grad():
+                        fake = self.gen(self.test_noise, self.currentLayerDepth, self.alpha)
+                        self.show_tensor_images(torch.cat((fake, real_image[:9]), 0), cur_step)
 
                 cur_step += 1
 
+            self.epNUM += 1
             print("Saving weights")
             self.save_weight()
-
-            self.epNUM += 1
 
     def movingAverage(self, lossname: str, stepSize: int):
         vals = self.losses[lossname][-stepSize:]
@@ -182,6 +184,7 @@ class train:
                 "previousSize": self.previousSize,
                 "currentLayerDepth": self.currentLayerDepth,
                 "losses": self.losses,
+                "test_noise": self.test_noise,
             },
             self.root + "/Parm_weig.tar",
         )
