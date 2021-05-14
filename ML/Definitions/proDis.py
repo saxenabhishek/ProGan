@@ -10,19 +10,24 @@ from layers import pixelNorm, EqConv2d, EqLinear
 
 
 class ProDis(nn.Module):
-    def __init__(self, layer_dept=5, Uper_feat_Exp=9):
+    def __init__(self, layer_dept: int = 5, Uper_feat_Exp: int = 9):
         super(ProDis, self).__init__()
         self.layer_depth = layer_dept
         self.Uper_feat_Exp = Uper_feat_Exp
         self.max_filter = 2 ** self.Uper_feat_Exp
 
         self.first_layer = nn.ModuleList(
-            [self.fromrgb(2 ** (self.Uper_feat_Exp - i)) for i in range(self.layer_depth + 1)]
+            [
+                self.fromrgb(2 ** (self.Uper_feat_Exp - i + 4)) if i > 3 else self.fromrgb(2 ** (self.Uper_feat_Exp))
+                for i in range(self.layer_depth + 1)
+            ]
         )
 
         self.blocks = nn.ModuleList(
             [
-                self.block(2 ** (self.Uper_feat_Exp - i - 1), 2 ** (self.Uper_feat_Exp - i))
+                self.block(2 ** (self.Uper_feat_Exp - i - 1 + 4), 2 ** (self.Uper_feat_Exp - i + 4))
+                if i > 3
+                else self.block(2 ** (self.Uper_feat_Exp), 2 ** (self.Uper_feat_Exp))
                 for i in range(self.layer_depth)
             ]
         )
@@ -53,7 +58,6 @@ class ProDis(nn.Module):
 
     def miniBatchSTD(self, x):
         # std deviation over differnt batches
-        x[x != x] = 0
         std = torch.std(x, 0)
         # average of that
         avg = torch.mean(std)
@@ -88,6 +92,6 @@ class ProDis(nn.Module):
 
 if __name__ == "__main__":
     d = ProDis()
+    print(d)
     out = d(torch.rand(12, 3, 128, 128), 5)
-
     print(out.shape)

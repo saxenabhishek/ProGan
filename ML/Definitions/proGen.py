@@ -10,7 +10,7 @@ from layers import pixelNorm, EqConv2d, EqLinear
 
 
 class ProGen(nn.Module):
-    def __init__(self, layer_dept=5, Uper_feat_Exp=9, tanh: bool = False):
+    def __init__(self, layer_dept: int = 5, Uper_feat_Exp: int = 9, tanh: bool = False):
         super(ProGen, self).__init__()
         self.layer_depth = layer_dept
         self.Uper_feat_Exp = Uper_feat_Exp
@@ -28,13 +28,18 @@ class ProGen(nn.Module):
 
         self.blocks = nn.ModuleList(
             [
-                self.block(2 ** (self.Uper_feat_Exp - i), 2 ** (self.Uper_feat_Exp - i - 1))
+                self.block(2 ** (self.Uper_feat_Exp - i + 4), 2 ** (self.Uper_feat_Exp - i - 1 + 4))
+                if i > 3
+                else self.block(2 ** (self.Uper_feat_Exp), 2 ** (self.Uper_feat_Exp))
                 for i in range(self.layer_depth)
             ]
         )
 
         self.last_layer = nn.ModuleList(
-            [self.torgb(2 ** (self.Uper_feat_Exp - i)) for i in range(self.layer_depth + 1)]
+            [
+                self.torgb(2 ** (self.Uper_feat_Exp - i + 4)) if i > 4 else self.torgb(2 ** (self.Uper_feat_Exp))
+                for i in range(self.layer_depth + 1)
+            ]
         )
 
     def torgb(self, maps):
@@ -76,7 +81,7 @@ class ProGen(nn.Module):
 
 
 if __name__ == "__main__":
-    g = ProGen(layer_dept=4, Uper_feat_Exp=9)
-    # print(g)
-    out = g(torch.rand(1, 512), 4, 0.5)
+    g = ProGen(layer_dept=6, Uper_feat_Exp=9)
+    print(g)
+    out = g(torch.rand(1, 512), 6, 0.5)
     print(out.shape)

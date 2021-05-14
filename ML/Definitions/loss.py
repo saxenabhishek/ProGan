@@ -24,7 +24,8 @@ class LSGAN:
 
 
 class WGANGP:
-    weight = 10
+    weight = 5
+    epsilonD = 0.001
 
     def disLoss(self, dreal, dfake, **kwarg):
         D = kwarg["disc"]
@@ -33,6 +34,9 @@ class WGANGP:
 
         real = kwarg["real"]
         fake = kwarg["fake"]
+
+        epsilonLoss = (dreal[:, 0] ** 2).sum() * self.epsilonD
+        epsilonLoss.backward(retain_graph=True)
 
         crit = dfake[:, 0].sum() - dreal[:, 0].sum()
         crit.backward()
@@ -58,12 +62,12 @@ class WGANGP:
 
         gradient_penalty.backward()
 
-        return gradient_penalty.item() + crit.item()
+        return gradient_penalty.detach().item() + crit.detach().item() + epsilonLoss.detach().item()
 
     def genloss(self, genout):
         crit = -genout[:, 0].sum()
         crit.backward()
-        return crit.item()
+        return crit.detach().item()
 
 
 def main():
