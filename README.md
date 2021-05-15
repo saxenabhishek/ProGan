@@ -149,7 +149,7 @@ trainer(
 )
 ```
 #### Loss Funtions
-The default loss function is `**WGANGP**` you can check out the immplementation in `progan\Definitions\loss.py`. We also have the option of using `**LSGAN**` loss like it is in the paper.
+The default loss function is `WGANGP` you can check out the immplementation in `progan\Definitions\loss.py`. We also have the option of using `LSGAN` loss like it is in the paper.
 
 ### Eva
 ```py
@@ -163,7 +163,11 @@ This modules contains function to generate outputs from saved weights. things li
   * **numrow** - number of rows in grid
   * **numcols** - columns in grid
   * **point** - number of points to go over
-  * **steps** - number of steps to take in latent space between two points. 
+  * **steps** - number of steps to take in latent space between two points.
+
+### Definitions
+This module handles the lower-level details of how progan is working. You will find the code for custom layers, models and data loaders here. I won't be getting into the details of that here. Feel free to go around and check out the code yourself. You can always raise an issue if you don't understand something.  
+
 
 ## 📜 License
 
