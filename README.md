@@ -39,7 +39,7 @@ The trainer class gives you complete control over the hyperparameters and data m
 '''
 Quick Start
 '''
-from ML.proTrain import trainer
+from progan.proTrain import trainer
 
 gan = trainer(path = 'path/to/data', batch_size = 128, split = [90,10])
 gan.train(1) # Trains one epoch
@@ -109,7 +109,7 @@ gan = progan.trainer(
 
 #### train()
 ```py
-train(epochs: int, display_step: int = 100) -> None
+gan.train(epochs: int, display_step: int = 100) -> None
 ```
 * **epochs** - epochs to run for
 * **display_step** - Prints stats and runs evaluation of every n number of samples 
@@ -119,7 +119,7 @@ train(epochs: int, display_step: int = 100) -> None
 The original paper has the concept of growing models, which means we add a layer after training the previous layer. Because of how sensitive gans are, we can't add new layers just like that. A constant alpha merges new layers with the model. This constraint makes handling data and models complicated. **Luckily** you don't need to worry about all that. You can call the `step_up` function to grow your model. we take care of everything internally.
 
 ```py
- gan.step_up() # if the genarator was generating (4,4) images now it will genarate (8,8) images
+gan.step_up() # if the genarator was generating (4,4) images now it will genarate (8,8) images
 ```
 > Note: Conversly a step_dn funtion is also availblle which does the opposite
 
@@ -142,7 +142,7 @@ These models take a lot of time to train. You'll probably want to run it a few e
   * **Epochs** - Epochs completed till now
 
 ```py
-trainer( 
+gan.trainer( 
     ...
     savedir: str = "ModelWeights/", # Save path
     loadmodel: bool = False, # pass this as true to load weights
