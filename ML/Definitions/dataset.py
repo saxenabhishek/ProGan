@@ -2,6 +2,7 @@
 Dataset
 
 """
+from typing import List, Tuple
 from torchvision.datasets import ImageFolder
 from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader, random_split
@@ -10,7 +11,15 @@ import torch
 
 class Data:
     def __init__(
-        self, path, mean=0.5, std=0.5, size1=(176, 176), size2=(64, 64), batch_size=128, shuffle=True, num_workers=2,
+        self,
+        path: str,
+        mean: float = 0.5,
+        std: float = 0.5,
+        size1: Tuple[int, int] = (176, 176),
+        size2: Tuple[int, int] = (64, 64),
+        batch_size: int = 128,
+        shuffle: bool = True,
+        num_workers: int = 2,
     ):
         self.path = path
         self.batch_size = batch_size
@@ -22,7 +31,10 @@ class Data:
         # changed transforms to manips to avoid confusion
         self.folderdata = Twinimages(s1=size1, s2=size2, root_dir=self.path, manips=self.transforms)
 
-    def getdata(self, split):
+    def changesize(self, s1: Tuple[int, int], s2: Tuple[int, int]):
+        self.folderdata.ChangeSize(s1, s2)
+
+    def getdata(self, split: List[int]):
         """
         split cannot contain 0
 
@@ -76,6 +88,13 @@ class Twinimages(Dataset):
 
         self.data = ImageFolder(self.path)
 
+        self.Ts1 = transforms.Resize(self.s2)
+        self.Ts2 = transforms.Resize(self.s2)
+
+    def ChangeSize(self, s1, s2):
+        self.Ts1 = transforms.Resize(s1)
+        self.Ts2 = transforms.Resize(s2)
+
     def __len__(self):
         return len(self.data)
 
@@ -83,8 +102,8 @@ class Twinimages(Dataset):
         item = self.data[idx]
 
         item_image = item[0]
-        size1 = self.manips(transforms.Resize(self.s1)(item_image))
-        size2 = self.manips(transforms.Resize(self.s2)(item_image))
+        size1 = self.manips(self.Ts1(item_image))
+        size2 = self.manips(self.Ts2(item_image))
 
         sample = {"S1": size1, "S2": size2, "class": [item[1]]}
 
@@ -95,7 +114,6 @@ if __name__ == "__main__":
     data = Data(path="Data", batch_size=12)
     split = [5, 1, 0]
     train, test, val = data.getdata(split)
-    print(test.dataset.dataset.s2)
-    test.dataset.dataset.s2 = (12, 12)
-    print(next(iter(test))["S2"].shape)
-    # print(len(train), len(test), len(val))
+    data.changesize((64, 64), (12, 12))
+    print(next(iter(test))["S1"].shape)
+    print(len(train), len(test), len(val))

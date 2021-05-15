@@ -6,8 +6,9 @@ import math
 import sys
 from time import time
 import gc
-
+from typing import Tuple, Optional
 import torch
+from torch.functional import Tensor
 import torch.optim as optim
 import torch.nn.functional as F
 from torchvision.utils import make_grid
@@ -23,7 +24,7 @@ from Definitions.proDis import ProDis
 from Definitions.proGen import ProGen
 
 
-class train:
+class trainer:
     currentSize = (4, 4)
     previousSize = (2, 2)
     currentLayerDepth = 0
@@ -35,15 +36,15 @@ class train:
         self,
         path: str,
         batch_size: int,
-        split: list,
+        split: Tuple[int,int,Optional[int]],
         savedir: str = "ModelWeights/",
         imagedir: str = "ModelWeights/img",
         maxLayerDepth: int = 4,
         merge_samples_Const: int = 1,
-        lr: list = [0.0001, 0.0001],
+        lr: Tuple[int,int]  = [0.0001, 0.0001],
         loadmodel: bool = False,
         PlotInNotebook: bool = False,
-    ):
+    ) -> None:
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         # self.device = "cpu"
@@ -59,14 +60,14 @@ class train:
         self.genopt = optim.Adam(self.gen.parameters(), lr=lr[0], betas=(beta1, 0.999))
 
         print("Making Dataloader")
-        data = Data(path=path, batch_size=batch_size, size1=self.currentSize, size2=self.previousSize, num_workers=1)
-        self.trainloader, self.testloader, _ = data.getdata(split=split)
+        self.data = Data(path=path, batch_size=batch_size, size1=self.currentSize, size2=self.previousSize, num_workers=1)
+        self.trainloader, self.testloader, _ = self.data.getdata(split=split)
 
         self.alpha_speed = 1 / len(self.trainloader) / merge_samples_Const
         self.root = savedir
         self.rootimg = imagedir
-        self.continuetraining: bool = loadmodel
-        self.PlotInNotebook: bool = PlotInNotebook
+        self.continuetraining = loadmodel
+        self.PlotInNotebook = PlotInNotebook
         self.batch_size = batch_size
 
         self.losses: dict = {
@@ -81,7 +82,7 @@ class train:
             self.loadValues()
             self.setImageSize()
 
-    def trainer(self, epochs: int, display_step: int):
+    def train(self, epochs: int, display_step: int = 100) -> None:
 
         self.gen.train()
         self.disc.train()
@@ -166,11 +167,11 @@ class train:
             print("Saving weights")
             self.save_weight()
 
-    def movingAverage(self, lossname: str, stepSize: int):
+    def movingAverage(self, lossname: str, stepSize: int) -> float:
         vals = self.losses[lossname][-stepSize:]
         return sum(vals) / len(vals)
 
-    def save_weight(self):
+    def save_weight(self)->None:
         torch.save(
             {
                 ":gen": self.gen.state_dict(),
@@ -189,7 +190,7 @@ class train:
             self.root + "/Parm_weig.tar",
         )
 
-    def loadValues(self):
+    def loadValues(self) -> None:
         checkpoint = torch.load(self.root + "/Parm_weig.tar", map_location=self.device)
         for i in checkpoint:
             print("Loading ", i)
@@ -201,11 +202,10 @@ class train:
                     print(checkpoint[i])
                 setattr(self, i, checkpoint[i])
 
-    def setImageSize(self):
-        self.trainloader.dataset.dataset.s1 = self.currentSize
-        self.trainloader.dataset.dataset.s2 = self.previousSize
+    def setImageSize(self) -> None:
+        self.data.changesize(self.currentSize,self.previousSize)
 
-    def step_up(self):
+    def step_up(self) -> None:
         self.currentLayerDepth += 1
 
         self.previousSize = self.currentSize
@@ -215,7 +215,7 @@ class train:
         self.setImageSize()
         self.alpha = 0
 
-    def step_dn(self):
+    def step_dn(self) -> None:
         self.currentLayerDepth -= 1
 
         self.currentSize = (self.currentSize[0] // 2,) * 2
@@ -225,7 +225,7 @@ class train:
         self.setImageSize()
         self.alpha = 0
 
-    def show_tensor_images(self, image_tensor, step: int):
+    def show_tensor_images(self, image_tensor: Tensor, step: int)  -> None:
         image_tensor = (image_tensor + 1) / 2
         image_unflat = image_tensor.detach().cpu()
         numImgs = image_tensor.shape[0]
@@ -240,7 +240,7 @@ class train:
             plt.savefig(self.rootimg + "/" + str(self.epNUM) + "_" + str(step) + ".png", bbox_inches="tight")
             plt.clf()
 
-    def plot_trainer(self):
+    def plot_trainer(self) -> None:
         for i in self.losses:
             if "prob" not in i:
                 plt.plot(self.losses[i], label=i)
@@ -264,7 +264,7 @@ class train:
 
 if __name__ == "__main__":
     st = time()
-    gan = train(
+    gan = trainer(
         "Data",
         128,
         [20, 80, 0],
@@ -274,6 +274,6 @@ if __name__ == "__main__":
         loadmodel=False,
         PlotInNotebook=False,
     )
-    gan.trainer(20, 100)
+    gan.train(20, 100)
     print(time() - st)
 
