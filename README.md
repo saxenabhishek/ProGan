@@ -39,7 +39,7 @@ The trainer class gives you complete control over the hyperparameters and data m
 '''
 Quick Start
 '''
-from progan.proTrain import trainer
+from progan import trainer
 
 gan = trainer(path = 'path/to/data', batch_size = 128, split = [90,10])
 gan.train(1) # Trains one epoch
