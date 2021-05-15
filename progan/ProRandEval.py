@@ -6,9 +6,10 @@ import sys
 sys.path.append("./progan")
 
 import Definitions.proGen as model
+import torchvision.utils as vutils
 
 
-def main(Genpath="C:\\Users\\as712\\Downloads\\Gen (5).pt", numrows=3, step=4):
+def walk(Genpath: str, numrows: int = 3, step: int = 4):
     print("Test : Walking in latent sapce")
     netG = model.ProGen(4, tanh=True)
     print("     * Model Made   ")
@@ -17,7 +18,6 @@ def main(Genpath="C:\\Users\\as712\\Downloads\\Gen (5).pt", numrows=3, step=4):
     d = loads["currentLayerDepth"]
     a = loads["alpha"]
     print("     * Weights Loaded   ")
-    # netG.eval()
 
     vec_shape = 512
     z = torch.randn(numrows, vec_shape)
@@ -43,6 +43,39 @@ def main(Genpath="C:\\Users\\as712\\Downloads\\Gen (5).pt", numrows=3, step=4):
     plt.show()
 
 
+def walk2d(gen_path: str, save_dir, numrows: int, numcols: int, step: int, points: int):
+    print("Test : Walking in latent sapce")
+    netG = model.ProGen(4, tanh=True)
+    print("     * Model Made   ")
+
+    loads = torch.load(gen_path)
+    netG.load_state_dict(loads[":gen"])
+
+    d = loads["currentLayerDepth"]
+    a = loads["alpha"]
+    print("     * Weights Loaded   ")
+
+    vec_shape = 512
+    z = torch.randn(numcols * numrows, vec_shape)
+    z2 = torch.randn(numcols * numrows, vec_shape)
+
+    diff = z2 - z
+    print("     * Initial Noise Created   ")
+    for j in range(points):
+        diff = z2 - z
+        for i in range(step):
+            img_vec = z + diff * (i / step)
+            with torch.no_grad():
+                img = netG(img_vec, depth=d, alpha=a)
+                plt.imshow(vutils.make_grid(img, nrow=numrows, normalize=True, padding=2).permute(1, 2, 0))
+                plt.axis(False)
+                plt.savefig(save_dir + f"{j}-{i}.png", bbox_inches="tight", dpi=120)
+        z = z2.clone()
+        z2 = torch.randn(numcols * numrows, vec_shape)
+
+    print("     * ALL Images genarated    ")
+
+
 if __name__ == "__main__":
-    main("Parm_weig_CIFAR10_3depth.tar", 5, 5)
+    walk2d("Parm_weig_CIFAR10_3depth.tar", "Cifar-10/", 6, 6, step=5, points=8)
 
