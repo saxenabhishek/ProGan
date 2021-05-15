@@ -1,6 +1,5 @@
 # ✨ ProGAN
-
-
+## 📺 Preview
 <div align="center">
 <img align = "center" src="assets\progan-ep41.gif">
 
@@ -11,7 +10,15 @@
 
 </div>
 <br>
+<div align="center">
+<img align = "center" src="assets\cifar-10-108 epoch.gif">
 
+##### Walking in the latent space of a genarator trained on Cifar-10 dataset.
+
+###### the genarator wsa trained on google colab for 80+ hours over a period of 2 weeks. Due to computational constraints the last layer (that genarates 64x64 images) has not been trained.
+
+
+</div>
 
 ## 💡 Project Description
 
@@ -30,11 +37,8 @@ gan.train(1) # Trains one epoch
 ```
 Read [ahead](https://github.com/saxenabhishek/ProGan/tree/aks-readme#-inside-the-box) to learn about all the features
 
-## 📺 Preview
 
-<div align="center">
-  <img alt="Screenshot" src="docs/preview.png" />
-</div>
+
 
 ## 📌 Prerequisites
 
@@ -92,7 +96,7 @@ gan = progan.trainer(
 
 #### train()
 ```py
-train(epochs: int, display_step: int = 100)
+train(epochs: int, display_step: int = 100) -> None
 ```
 * **epochs** - epochs to run for
 * **display_step** - Prints stats and runs evaluation of every n number of samples 
@@ -110,7 +114,7 @@ The original paper has the concept of growing models, which means we add a layer
 
 The dictionary `losses` contains all collected values like Discriminator opinions, other loss terms, etc. Plot trainer function is a simple utilty, it gives you a graph of loss and discriminator outputs. It helps you estimate how the training is going. If the `ShotInNotebook` option is False the graph is saved with a epoch details instead  However, You always have the option to access the values yourself and do your analysis. You can even add to the existing terms and collect more data.
 
-```
+```py
 gan.losses['gen'] # loss of the genarator
 ```
 
@@ -132,18 +136,21 @@ trainer(
 )
 ```
 #### Loss Funtions
-The default loss function is **WGANGP** you can check out the immplementation in `progan\Definitions\loss.py`. We also have the option of using **LSGAN** loss like it is in the paper.
+The default loss function is `**WGANGP**` you can check out the immplementation in `progan\Definitions\loss.py`. We also have the option of using `**LSGAN**` loss like it is in the paper.
 
 ### Eva
 ```py
-eva(path:str ="path/to/model", numrows:int=3, step:int=4)
+eva2(gen_path: str, save_dir: str , numrows: int, numcols: int, step: int, points: int) -> None:
 ```
-This modules contains function to do generate outputs from saved weights. things like walking in latent space and genarating random images.
+This modules contains function to generate outputs from saved weights. things like walking in latent space and genarating random images.
 
 #### Parameters
-  * **path** - path to the generator function
+  * **gen_path** - path to the generator function
+  * **save_dir** - path to save images in
   * **numrow** - number of rows in grid
-  * **steps** - number of steps to take in latent space between two point. 
+  * **numcols** - columns in grid
+  * **point** - number of points to go over
+  * **steps** - number of steps to take in latent space between two points. 
 
 ## 📜 License
 
