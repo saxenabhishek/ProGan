@@ -43,7 +43,7 @@ def walk(Genpath: str, numrows: int = 3, step: int = 4):
     plt.show()
 
 
-def walk2d(gen_path: str, save_dir, numrows: int, numcols: int, step: int, points: int):
+def walk2d(gen_path: str, save_dir, numrows: int, numcols: int, step: int, points: int) -> None:
     print("Test : Walking in latent sapce")
     netG = model.ProGen(4, tanh=True)
     print("     * Model Made   ")
