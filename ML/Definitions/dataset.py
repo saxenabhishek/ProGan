@@ -40,23 +40,41 @@ class Data:
 
         If you want 2 splits only pass 0 in thrid index of split
         """
-        assert len(split) == 3
 
-        divisor = 0
-        for i in range(3):
-            divisor += split[i]
+        def list_get(l, idx, default):
+            try:
+                return l[idx]
+            except IndexError:
+                return default
+
+        split = [list_get(split, i, 0) for i in range(3)]
+
+        divisor = sum(split)
 
         length = len(self.folderdata)
+        print(length)
+        print(split)
 
         # 1 is the samllest unit we can divide the dataset in.
         #  without the if condition it might be 0
-        unit = int(length / divisor) if divisor < length else 1
-
+        unit = length / divisor
+        print(unit)
         # modifying split to be scaled according to legth of dataset
-        split[0] = split[0] * unit
-        split[1] = split[1] * unit
+        split[0] = int(split[0] * unit)
+        split[1] = int(split[1] * unit)
+        if split[1] <= 0:
+            split[1] = 1
+            split[0] -= 1
 
         split[2] = length - split[0] - split[1]
+
+        if split[2] <= 0:
+            split[2] = 1
+            split[0] -= 1
+
+        print(split)
+
+        assert sum(split) == length
 
         train, test, val = random_split(self.folderdata, split, generator=torch.Generator().manual_seed(69),)
 
@@ -112,7 +130,7 @@ class Twinimages(Dataset):
 
 if __name__ == "__main__":
     data = Data(path="Data", batch_size=12)
-    split = [5, 1, 0]
+    split = [19850, 50]
     train, test, val = data.getdata(split)
     data.changesize((64, 64), (12, 12))
     print(next(iter(test))["S1"].shape)
