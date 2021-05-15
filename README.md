@@ -44,7 +44,7 @@ from progan import trainer
 gan = trainer(path = 'path/to/data', batch_size = 128, split = [90,10])
 gan.train(1) # Trains one epoch
 ```
-Read [ahead](https://github.com/saxenabhishek/ProGan/tree/aks-readme#-inside-the-box) to learn about all the features
+Read [ahead](#-inside-the-box) to learn about all the features
 
 
 
