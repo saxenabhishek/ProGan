@@ -13,7 +13,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torchvision.utils import make_grid
 
-sys.path.append("./ML")
+sys.path.append("./progan")
 
 import matplotlib.pyplot as plt
 from tqdm.auto import tqdm
@@ -36,12 +36,12 @@ class trainer:
         self,
         path: str,
         batch_size: int,
-        split: Tuple[int,int,Optional[int]],
+        split: Tuple[int, int, Optional[int]],
         savedir: str = "ModelWeights/",
         imagedir: str = "ModelWeights/img",
         maxLayerDepth: int = 4,
         merge_samples_Const: int = 1,
-        lr: Tuple[int,int]  = [0.0001, 0.0001],
+        lr: Tuple[float, float] = [0.0001, 0.0001],
         loadmodel: bool = False,
         PlotInNotebook: bool = False,
     ) -> None:
@@ -60,7 +60,9 @@ class trainer:
         self.genopt = optim.Adam(self.gen.parameters(), lr=lr[0], betas=(beta1, 0.999))
 
         print("Making Dataloader")
-        self.data = Data(path=path, batch_size=batch_size, size1=self.currentSize, size2=self.previousSize, num_workers=1)
+        self.data = Data(
+            path=path, batch_size=batch_size, size1=self.currentSize, size2=self.previousSize, num_workers=1
+        )
         self.trainloader, self.testloader, _ = self.data.getdata(split=split)
 
         self.alpha_speed = 1 / len(self.trainloader) / merge_samples_Const
@@ -171,7 +173,7 @@ class trainer:
         vals = self.losses[lossname][-stepSize:]
         return sum(vals) / len(vals)
 
-    def save_weight(self)->None:
+    def save_weight(self) -> None:
         torch.save(
             {
                 ":gen": self.gen.state_dict(),
@@ -203,7 +205,7 @@ class trainer:
                 setattr(self, i, checkpoint[i])
 
     def setImageSize(self) -> None:
-        self.data.changesize(self.currentSize,self.previousSize)
+        self.data.changesize(self.currentSize, self.previousSize)
 
     def step_up(self) -> None:
         self.currentLayerDepth += 1
@@ -218,14 +220,14 @@ class trainer:
     def step_dn(self) -> None:
         self.currentLayerDepth -= 1
 
-        self.currentSize = (self.currentSize[0] // 2,) * 2
-        self.previousSize = (self.currentSize[0] // 2,) * 2
+        self.currentSize = (int(self.currentSize[0] // 2),) * 2
+        self.previousSize = (int(self.currentSize[0] // 2),) * 2
 
         print("Decreasing size", self.previousSize, self.currentSize)
         self.setImageSize()
         self.alpha = 0
 
-    def show_tensor_images(self, image_tensor: Tensor, step: int)  -> None:
+    def show_tensor_images(self, image_tensor: Tensor, step: int) -> None:
         image_tensor = (image_tensor + 1) / 2
         image_unflat = image_tensor.detach().cpu()
         numImgs = image_tensor.shape[0]
@@ -269,7 +271,7 @@ if __name__ == "__main__":
         128,
         [20, 80, 0],
         "D:\Projects\ProGan\ModelWeights",
-        lr=[0.001, 0.001],
+        lr=(0.001, 0.001),
         merge_samples_Const=20,
         loadmodel=False,
         PlotInNotebook=False,

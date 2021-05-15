@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 import sys
 
-sys.path.append("./ML/Definitions/")
+sys.path.append("./progan/Definitions/")
 
 from layers import pixelNorm, EqConv2d, EqLinear
 
