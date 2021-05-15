@@ -14,4 +14,6 @@ Landmarks_weights
 ModelWeights/img
 .mypy_cache
 ModelWeights/Parm_weig.tar
+
+*tar
 *ipynb
