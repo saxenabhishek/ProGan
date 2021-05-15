@@ -1,8 +1,8 @@
 Data
 .vscode
-ML/__pycache__
+progan/__pycache__
 
-ML/Definitions/__pycache__
+progan/Definitions/__pycache__
 Data_small
 
 ModelWeights/Dis.pt
@@ -14,4 +14,6 @@ Landmarks_weights
 ModelWeights/img
 .mypy_cache
 ModelWeights/Parm_weig.tar
+
+*tar
 *ipynb
