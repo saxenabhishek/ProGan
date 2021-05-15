@@ -64,7 +64,7 @@ Read [ahead](https://github.com/saxenabhishek/ProGan/tree/aks-readme#-inside-the
 
 Step One ( Clone this repo )
 ```
-git clone https://github.com/saxenabhishek/ProGan.git
+> git clone https://github.com/saxenabhishek/ProGan.git
 ```
 
 Step Two ( Install requirments prefrably in a fresh enviorement )
@@ -158,7 +158,7 @@ eva2(gen_path: str, save_dir: str , numrows: int, numcols: int, step: int, point
 This modules contains function to generate outputs from saved weights. things like walking in latent space and genarating random images.
 
 #### Parameters
-  * **gen_path** - path to the generator function
+  * **gen_path** - path to the saved weights
   * **save_dir** - path to save images in
   * **numrow** - number of rows in grid
   * **numcols** - columns in grid
