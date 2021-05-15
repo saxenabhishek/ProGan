@@ -24,7 +24,16 @@
 
 This project is a reimplementation of the paper [Progressive Growing of GANs for Improved Quality, Stability, and Variation](https://arxiv.org/abs/1710.10196)  by Tero Karras, Timo Aila, Samuli Laine, Jaakko Lehtinen. Check out this [article](https://towardsdatascience.com/progan-how-nvidia-generated-images-of-unprecedented-quality-51c98ec2cbd2) for a recap on how GANs work and how progressive gans are different.
 
-This repository is developed like a python package, so it is easy to quickly start training on any dataset. Everything you need is an import away. The trainer class gives you complete control over the hyperparameters and data monitoring.
+This repository is developed like a python package, so it is easy to start training on any dataset quickly. Everything you need is an import away. The repo includes but is not limited to -  
+
+* Growing models
+* Linearly Fading in layers
+* Pixel Normalisation
+* Minibatch Standard Deviation
+* Equalized Learning Rate
+* WGANGP and LSGAN loss funtions
+
+The trainer class gives you complete control over the hyperparameters and data monitoring.
 
 ```py
 '''
@@ -54,6 +63,9 @@ Read [ahead](https://github.com/saxenabhishek/ProGan/tree/aks-readme#-inside-the
 ## 🔧 Installation 
 
 Step One ( Clone this repo )
+```
+git clone https://github.com/saxenabhishek/ProGan.git
+```
 
 Step Two ( Install requirments prefrably in a fresh enviorement )
 ```
@@ -64,6 +76,7 @@ Step Three (Run the demo file)
 ```
 > python main.py
 ```
+> the demo file is only to understand how this Package works. I don't recommend running the demo file in its entirety.  
 ## 📦 Inside the box
 The 'progan' Package exposes three modules trainer, eva, and definitions.
 
