@@ -37,13 +37,13 @@ class trainer:
         path: str,
         batch_size: int,
         split: Tuple[int, int, Optional[int]],
-        savedir: str = "ModelWeights/",
-        imagedir: str = "ModelWeights/img",
+        save_dir: str = "ModelWeights/",
+        image_dir: str = "ModelWeights/img",
         maxLayerDepth: int = 4,
-        merge_samples_Const: int = 1,
-        lr: Tuple[float, float] = [0.0001, 0.0001],
-        loadmodel: bool = False,
-        PlotInNotebook: bool = False,
+        merge_samples_const: int = 1,
+        lr: Tuple[float, float] = (0.0001, 0.0001),
+        loadModel: bool = False,
+        plotInNotebook: bool = False,
     ) -> None:
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -65,11 +65,11 @@ class trainer:
         )
         self.trainloader, self.testloader, _ = self.data.getdata(split=split)
 
-        self.alpha_speed = 1 / len(self.trainloader) / merge_samples_Const
-        self.root = savedir
-        self.rootimg = imagedir
-        self.continuetraining = loadmodel
-        self.PlotInNotebook = PlotInNotebook
+        self.alpha_speed = 1 / len(self.trainloader) / merge_samples_const
+        self.root = save_dir
+        self.rootimg = image_dir
+        self.continuetraining = loadModel
+        self.PlotInNotebook = plotInNotebook
         self.batch_size = batch_size
 
         self.losses: dict = {
@@ -269,12 +269,12 @@ if __name__ == "__main__":
     gan = trainer(
         "Data",
         128,
-        [20, 80, 0],
+        (20, 80, 0),
         "D:\Projects\ProGan\ModelWeights",
         lr=(0.001, 0.001),
-        merge_samples_Const=20,
-        loadmodel=False,
-        PlotInNotebook=False,
+        merge_samples_const=20,
+        loadModel=False,
+        plotInNotebook=False,
     )
     gan.train(20, 100)
     print(time() - st)
